@@ -69,10 +69,10 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--surface-2);
 }
 
-main { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 
 /* ============ 星图 ============ */
-.starmap-wrap { width: 100%; }
+.starmap-wrap { width: 100%; max-width: 1560px; margin: 0 auto; }
 #starmap { width: 100%; height: auto; display: block; }
 
 .region-label {
@@ -110,7 +110,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
 /* ============ 项目视图 ============ */
 .projects-track {
   display: flex; flex-direction: column; gap: 0;
-  max-width: 760px; margin: 24px auto; position: relative;
+  max-width: 920px; margin: 24px auto; position: relative;
 }
 .projects-track::before {
   content: ""; position: absolute; left: 47px; top: 40px; bottom: 40px;
@@ -143,7 +143,10 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
 .project-status.doing { color: var(--t2); }
 
 /* ============ 列表视图 ============ */
-.list-root { max-width: 860px; margin: 20px auto 40px; display: grid; gap: 28px; }
+.list-root { max-width: 1150px; margin: 20px auto 40px; display: grid; gap: 28px; }
+@media (min-width: 1400px) {
+  .list-root { grid-template-columns: 1fr 1fr; align-items: start; max-width: 1560px; }
+}
 .list-section h2 {
   font-family: var(--font-display); font-size: 20px; letter-spacing: 0.08em;
   margin-bottom: 12px; color: var(--ink);
@@ -181,7 +184,7 @@ details.course-k summary .list-row { border-bottom: none; }
 
 /* ============ 热力图 ============ */
 .heatmap-panel {
-  max-width: 1000px; margin: 44px auto 0; padding: 26px 24px;
+  max-width: min(1560px, 92vw); margin: 44px auto 0; padding: 26px 28px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
 }
 .heatmap-panel h2 {
@@ -189,7 +192,8 @@ details.course-k summary .list-row { border-bottom: none; }
 }
 #heatmap-total { color: var(--ink-2); font-size: 13px; margin: 4px 0 14px; }
 .heatmap-scroll { overflow-x: auto; padding-bottom: 6px; }
-#heatmap svg { display: block; }
+#heatmap { display: flex; justify-content: center; }
+#heatmap svg { display: block; width: 100%; max-width: 1300px; min-width: 760px; height: auto; }
 .hm-label { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-3); }
 .hm-legend-label { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); }
 .hm-fallback { color: var(--ink-2); font-size: 14px; padding: 18px 0; }

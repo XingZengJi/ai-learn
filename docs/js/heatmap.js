@@ -46,7 +46,7 @@
     const weeks = Math.ceil((days.length + firstDow) / 7);
     const width = LEFT + weeks * (CELL + GAP) + 10;
     const height = TOP + 7 * (CELL + GAP) + 34;
-    const svg = el("svg", { width: width, height: height, role: "img", "aria-label": "GitHub 贡献热力图" });
+    const svg = el("svg", { viewBox: "0 0 " + width + " " + height, role: "img", "aria-label": "GitHub 贡献热力图" });
 
     /* 星期标签（一 / 三 / 五） */
     [["一", 1], ["三", 3], ["五", 5]].forEach(([txt, row]) => {
