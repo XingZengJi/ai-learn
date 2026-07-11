@@ -1,0 +1,10 @@
+{
+  "_说明": "唯一权威进度文件。只记录 doing / done 的条目，未出现的一律视为 todo。点亮方式：告诉 Claude「点亮 XX」，由 Claude 更新此文件并提交。",
+  "courses": {
+    "c01": { "status": "doing", "date": "2026-07-11" }
+  },
+  "knowledge": {},
+  "projects": {
+    "p1": { "status": "doing", "date": "2026-07-11" }
+  }
+}

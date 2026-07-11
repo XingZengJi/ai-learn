@@ -1,0 +1,29 @@
+{
+  "tiers": {
+    "1": { "name": "使用与协作", "color": "green" },
+    "2": { "name": "工程与开发", "color": "blue" },
+    "3": { "name": "按需选修", "color": "gray" }
+  },
+  "courses": [
+    { "id": "c01", "order": 1, "en": "Claude 101", "cn": "Claude 入门", "tier": 1, "url": "https://anthropic.skilljar.com/claude-101", "summary": "学会在日常工作中使用 Claude，掌握核心功能", "prereq": [] },
+    { "id": "c02", "order": 2, "en": "Claude Code 101", "cn": "Claude Code 入门", "tier": 1, "url": "https://anthropic.skilljar.com/claude-code-101", "summary": "从安装到进阶定制，掌握 Claude Code 完整工作流", "prereq": ["c01"] },
+    { "id": "c03", "order": 3, "en": "Introduction to Claude Cowork", "cn": "Claude Cowork 入门", "tier": 1, "url": "https://anthropic.skilljar.com/introduction-to-claude-cowork", "summary": "让 Claude 直接操作你的文件、文件夹和应用", "prereq": ["c01"] },
+    { "id": "c04", "order": 4, "en": "Introduction to Agent Skills", "cn": "Agent Skills 入门", "tier": 1, "url": "https://anthropic.skilljar.com/introduction-to-agent-skills", "summary": "把做事方法写成可复用、可分享的技能文档", "prereq": ["c02"] },
+    { "id": "c05", "order": 5, "en": "Introduction to Subagents", "cn": "Subagents 入门", "tier": 1, "url": "https://anthropic.skilljar.com/introduction-to-subagents", "summary": "创建和管理 Claude 的分身，任务分派并行处理", "prereq": ["c02"] },
+    { "id": "c06", "order": 6, "en": "AI Fluency: Framework & Foundations", "cn": "AI 素养：框架与基础", "tier": 1, "url": "https://anthropic.skilljar.com/ai-fluency-framework-foundations", "summary": "与 AI 高效协作的 4D 方法论", "prereq": [] },
+    { "id": "c07", "order": 7, "en": "Claude Code in Action", "cn": "Claude Code 实战", "tier": 2, "url": "https://anthropic.skilljar.com/claude-code-in-action", "summary": "在真实开发项目中综合运用 Claude Code", "prereq": ["c02"] },
+    { "id": "c08", "order": 8, "en": "Introduction to Model Context Protocol", "cn": "MCP 入门", "tier": 2, "url": "https://anthropic.skilljar.com/introduction-to-model-context-protocol", "summary": "动手搭建 MCP 服务器和客户端", "prereq": ["c02"] },
+    { "id": "c09", "order": 9, "en": "Model Context Protocol: Advanced Topics", "cn": "MCP 进阶", "tier": 2, "url": "https://anthropic.skilljar.com/model-context-protocol-advanced-topics", "summary": "MCP 生产环境的部署与进阶模式", "prereq": ["c08"] },
+    { "id": "c10", "order": 10, "en": "Claude Platform 101", "cn": "Claude 开发者平台入门", "tier": 2, "url": "https://anthropic.skilljar.com/claude-platform-101", "summary": "理解用 API 做产品的完整链路", "prereq": ["c02"] },
+    { "id": "c11", "order": 11, "en": "Building with the Claude API", "cn": "用 Claude API 开发", "tier": 2, "url": "https://anthropic.skilljar.com/claude-with-the-anthropic-api", "summary": "通过 API 调用 Claude 开发产品的全部知识", "prereq": ["c10"] },
+    { "id": "c12", "order": 12, "en": "AI Fluency for Builders", "cn": "创业者/产品人的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-builders", "summary": "用 AI 放大个人影响力和效率", "prereq": ["c06"] },
+    { "id": "c13", "order": 13, "en": "AI Capabilities and Limitations", "cn": "AI 的能力与局限", "tier": 3, "url": "https://anthropic.skilljar.com/ai-capabilities-and-limitations", "summary": "建立对 AI 的合理预期", "prereq": [] },
+    { "id": "c14", "order": 14, "en": "Claude with Amazon Bedrock", "cn": "在 Amazon Bedrock 上使用 Claude", "tier": 3, "url": "https://anthropic.skilljar.com/claude-in-amazon-bedrock", "summary": "通过 AWS 接入 Claude", "prereq": ["c11"] },
+    { "id": "c15", "order": 15, "en": "Claude with Google Cloud's Vertex AI", "cn": "在 Google Vertex AI 上使用 Claude", "tier": 3, "url": "https://anthropic.skilljar.com/claude-with-google-vertex", "summary": "通过谷歌云接入 Claude", "prereq": ["c11"] },
+    { "id": "c16", "order": 16, "en": "AI Fluency for Educators", "cn": "教育工作者的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-educators", "summary": "AI 素养教育者定制版", "prereq": ["c06"] },
+    { "id": "c17", "order": 17, "en": "AI Fluency for Students", "cn": "学生的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-students", "summary": "AI 素养学生定制版", "prereq": ["c06"] },
+    { "id": "c18", "order": 18, "en": "Teaching AI Fluency", "cn": "如何教授 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/teaching-ai-fluency", "summary": "在课堂上讲授 AI 素养", "prereq": ["c06"] },
+    { "id": "c19", "order": 19, "en": "AI Fluency for Nonprofits", "cn": "非营利组织的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-nonprofits", "summary": "AI 素养公益组织定制版", "prereq": ["c06"] },
+    { "id": "c20", "order": 20, "en": "AI Fluency for Small Businesses", "cn": "小微企业的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-small-businesses", "summary": "AI 素养小企业定制版", "prereq": ["c06"] }
+  ]
+}

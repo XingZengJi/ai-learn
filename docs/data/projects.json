@@ -1,0 +1,49 @@
+{
+  "projects": [
+    {
+      "id": "p1",
+      "level": "初级",
+      "name": "成就地图 v1",
+      "desc": "本页面自身：建 GitHub 仓库、开发星空地图网页并上线 GitHub Pages",
+      "weeks": "第 1 周",
+      "covers": ["k0101", "k0102", "k0105"],
+      "extraSkills": ["HTML/CSS 基础", "Git 与 GitHub", "GitHub Pages 部署"]
+    },
+    {
+      "id": "p2",
+      "level": "初中级",
+      "name": "网页小功能实战",
+      "desc": "给 github-trending-weekly 加功能，完整走一遍 调研→计划→编码→提交 工作流",
+      "weeks": "第 3–4 周",
+      "covers": ["k0203", "k0204", "k0206", "k0205"],
+      "extraSkills": ["命令行", "前端/后端概念"]
+    },
+    {
+      "id": "p3",
+      "level": "中级",
+      "name": "自动化工作流",
+      "desc": "自建 Skill + Subagent + Hook 组成的自动化流水线，把个人方法论固化为系统",
+      "weeks": "第 5–6 周",
+      "covers": ["k0402", "k0403", "k0404", "k0502", "k0503", "k0210", "k0706"],
+      "extraSkills": []
+    },
+    {
+      "id": "p4",
+      "level": "进阶",
+      "name": "MCP 接入",
+      "desc": "搭建一个最小 MCP 服务器并真实接入 Claude Code 使用",
+      "weeks": "第 7–8 周",
+      "covers": ["k0801", "k0802", "k0803", "k0804", "k0704"],
+      "extraSkills": ["API 概念", "JSON", "Python 读代码"]
+    },
+    {
+      "id": "p5",
+      "level": "毕业",
+      "name": "AI 产品雏形",
+      "desc": "调用 Claude API 的完整产品雏形，综合运用全部所学",
+      "weeks": "第 9–10 周",
+      "covers": ["k1101", "k1102", "k1106", "k1107", "k1003", "k1110"],
+      "extraSkills": ["数据库概念", "部署上线"]
+    }
+  ]
+}
