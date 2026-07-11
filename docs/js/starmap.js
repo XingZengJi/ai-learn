@@ -76,6 +76,14 @@
       merge.appendChild(el("feMergeNode", { in: "SourceGraphic" }));
       f.appendChild(blur); f.appendChild(merge);
       defs.appendChild(f);
+
+      /* 整座点亮时的光环渐变 */
+      const grad = el("radialGradient", { id: "halo-t" + t });
+      const s0 = el("stop", { offset: "0%", "stop-color": TIER_COLOR[t], "stop-opacity": "0.22" });
+      const s1 = el("stop", { offset: "70%", "stop-color": TIER_COLOR[t], "stop-opacity": "0.07" });
+      const s2 = el("stop", { offset: "100%", "stop-color": TIER_COLOR[t], "stop-opacity": "0" });
+      grad.appendChild(s0); grad.appendChild(s1); grad.appendChild(s2);
+      defs.appendChild(grad);
     }
     svg.appendChild(defs);
 
@@ -119,20 +127,36 @@
       const stars = data.knowledgeByCourse[course.id] || [];
       const color = TIER_COLOR[course.tier];
       const statuses = stars.map(k => state.statusOf("knowledge", k.id));
+      const isLit = s => s === "done" || s === "preview";
       const allDone = stars.length > 0 && statuses.every(s => s === "done");
+      /* 全部点亮（含预览）即触发整座光环，预览也能先睹为快 */
+      const allLit = stars.length > 0 && statuses.every(isLit);
 
       const g = el("g", { "data-course": course.id });
 
+      /* 整座点亮：星座背后浮起梯队色光环 */
+      if (allLit) {
+        const [hx, hy] = centers[course.id];
+        const hr = stars.length === 1 ? 42 : Math.min(30 + stars.length * 7, 80) + 42;
+        g.appendChild(el("ellipse", {
+          cx: hx, cy: hy, rx: hr, ry: hr * 0.72 + 8,
+          fill: "url(#halo-t" + course.tier + ")",
+          class: "constellation-halo" + (allDone ? "" : " preview")
+        }));
+      }
+
       for (let i = 0; i < stars.length - 1; i++) {
         const a = starPos[stars[i].id], b = starPos[stars[i + 1].id];
-        const bothLit = statuses[i] !== "todo" && statuses[i + 1] !== "todo";
-        g.appendChild(el("line", {
+        const bothLit = isLit(statuses[i]) && isLit(statuses[i + 1]);
+        const attrs = {
           x1: a[0], y1: a[1], x2: b[0], y2: b[1],
           class: "constellation-line",
-          stroke: allDone ? color : "#2a3454",
-          "stroke-width": allDone ? 1.6 : 1,
+          stroke: allLit ? color : "#2a3454",
+          "stroke-width": allLit ? 1.6 : 1,
           opacity: bothLit ? 0.9 : 0.55
-        }));
+        };
+        if (allLit) attrs.filter = "url(#glow-t" + course.tier + ")";
+        g.appendChild(el("line", attrs));
       }
 
       stars.forEach((k, i) => {
@@ -161,16 +185,20 @@
         g.appendChild(sg);
       });
 
-      /* 课程标签 */
+      /* 课程标签：计数含预览点亮；整座点亮加 ✦ 徽记 */
       const [cx, cy] = centers[course.id];
-      const litCount = statuses.filter(s => s === "done").length;
+      const litCount = statuses.filter(isLit).length;
       const labelY = cy + (stars.length === 1 ? 24 : Math.min(30 + stars.length * 7, 80) * 0.82 + 22);
-      const label = el("text", { x: cx, y: labelY, "text-anchor": "middle", class: "course-label" + (allDone ? " done" : "") });
-      label.textContent = course.cn;
-      if (allDone) label.setAttribute("fill", color);
+      const label = el("text", { x: cx, y: labelY, "text-anchor": "middle", class: "course-label" + (allLit ? " done" : "") });
+      label.textContent = allLit ? "✦ " + course.cn + " ✦" : course.cn;
+      if (allLit) {
+        label.style.fill = color; /* 内联 style 才能压过样式表的 fill */
+        label.setAttribute("filter", "url(#glow-t" + course.tier + ")");
+      }
       g.appendChild(label);
       const count = el("text", { x: cx, y: labelY + 15, "text-anchor": "middle", class: "course-count" });
-      count.textContent = litCount + " / " + stars.length;
+      count.textContent = allLit ? litCount + " / " + stars.length + " 全座点亮" : litCount + " / " + stars.length;
+      if (allLit) count.style.fill = color;
       g.appendChild(count);
 
       svg.appendChild(g);

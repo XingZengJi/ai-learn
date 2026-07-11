@@ -171,7 +171,11 @@
     secCourse.innerHTML = "<h2>课程 · 星座</h2>";
     state.data.courses.forEach(c => {
       const ks = state.data.knowledgeByCourse[c.id] || [];
-      const doneN = ks.filter(k => state.statusOf("knowledge", k.id) === "done").length;
+      /* 计数含预览点亮，和星图视觉一致 */
+      const litN = ks.filter(k => {
+        const s = state.statusOf("knowledge", k.id);
+        return s === "done" || s === "preview";
+      }).length;
       const cst = courseStatus(c);
       const color = TIER_COLOR[c.tier];
 
@@ -183,7 +187,7 @@
         '<span class="status-dot ' + cst + '" style="color:' + color + '"></span>' +
         '<span class="name">' + c.cn + '<span class="en">' + c.en + "</span></span>" +
         '<span class="tier-chip" style="color:' + color + '">' + state.data.tiers[c.tier].name + "</span>" +
-        '<span class="meta">' + doneN + " / " + ks.length + "</span>" +
+        '<span class="meta">' + litN + " / " + ks.length + (litN === ks.length && ks.length ? " ✦" : "") + "</span>" +
         "</div>";
       details.appendChild(summary);
 

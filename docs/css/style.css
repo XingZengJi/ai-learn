@@ -93,7 +93,12 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .dust.tw { animation: twinkle 4s ease-in-out infinite; }
 
 .course-label { font-size: 13px; fill: var(--ink-2); }
-.course-label.done { fill: var(--ink); }
+.course-label.done { fill: var(--ink); font-weight: 600; }
+
+/* 整座点亮的光环：缓慢呼吸 */
+@keyframes halo-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.constellation-halo { animation: halo-breathe 3.6s ease-in-out infinite; }
+.constellation-halo.preview { opacity: 0.65; }
 .course-count { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); }
 
 .map-legend {
@@ -226,7 +231,7 @@ details.course-k summary .list-row { border-bottom: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dust.tw, .star.lit circle.core { animation: none; }
+  .dust.tw, .star.lit circle.core, .constellation-halo { animation: none; }
 }
 
 @media (max-width: 640px) {
