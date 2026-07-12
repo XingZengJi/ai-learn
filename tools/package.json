@@ -1,0 +1,8 @@
+{
+  "name": "ai-learn-tools",
+  "private": true,
+  "description": "成就地图的校验工具：check-data.py 校验数据（零依赖），e2e.js 冒烟测试（需 npm install）",
+  "devDependencies": {
+    "jsdom": "^27.0.0"
+  }
+}
