@@ -40,14 +40,21 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ============ 双版本主题 ============ */
 /* 梯队色 --t1/--t2/--t3 的唯一数据源是各厂商 courses.json 的 tiers.colorHex（JS 加载后注入）；
-   这里的同值覆盖只为避免首屏闪色。 */
+   这里的同值覆盖只为避免首屏闪色。
+   OpenAI 版「极光」色系（validate_palette 深色底全项通过）：青 / 紫罗兰 / 玫红，
+   与 Anthropic 版（绿 / 蓝 / 琥珀）色相族完全错开。 */
 body[data-provider="openai"] {
-  --t1: #10a37f;
-  --t2: #13a3b5;
-  --t3: #7c6ff0;
+  --t1: #12a5bd;
+  --t2: #8b7cf7;
+  --t3: #cf5990;
+  --bg: #0a0d1c;
   background:
-    radial-gradient(ellipse 1200px 600px at 50% -100px, #0f2420 0%, var(--bg) 60%),
+    radial-gradient(ellipse 1200px 600px at 50% -100px, #0c2431 0%, var(--bg) 60%),
     var(--bg);
+}
+body[data-provider="openai"] .site-header h1 {
+  background: linear-gradient(180deg, #ffffff 30%, #a5dbe8 100%);
+  -webkit-background-clip: text; background-clip: text;
 }
 
 /* ============ 页眉 ============ */

@@ -1,8 +1,8 @@
 {
   "tiers": {
-    "1": { "name": "官方证书课程", "colorHex": "#10a37f" },
-    "2": { "name": "主题深入（待策展）", "colorHex": "#13a3b5" },
-    "3": { "name": "按需选修（待策展）", "colorHex": "#7c6ff0" }
+    "1": { "name": "官方证书课程", "colorHex": "#12a5bd" },
+    "2": { "name": "主题深入（待策展）", "colorHex": "#8b7cf7" },
+    "3": { "name": "按需选修（待策展）", "colorHex": "#cf5990" }
   },
   "layout": {
     "viewBox": [1200, 520],
