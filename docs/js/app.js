@@ -1,10 +1,47 @@
-/* 应用主逻辑：数据加载、进度状态合并（权威 + 预览）、三视图渲染 */
+/* 应用主逻辑：数据加载、进度状态合并（权威 + 预览）、三视图渲染、厂商双版本切换 */
 (function () {
   "use strict";
 
-  const PREVIEW_KEY = "cc-map-preview";
-  const TIER_COLOR = { 1: "#199e70", 2: "#3987e5", 3: "#c98500" };
+  /* ---------- 双版本厂商配置 ---------- */
+  const PROVIDERS = {
+    anthropic: {
+      switchTo: "openai",
+      switchLabel: "⇄ 切换到 OpenAI 课程",
+      eyebrow: "ANTHROPIC SKILLJAR · 2026",
+      dataDir: "data/anthropic/",
+      storageSuffix: "",           /* 无后缀 = 兼容既有 localStorage 数据 */
+      sourceLabel: "Anthropic 课程",
+      sourceUrl: "https://anthropic.skilljar.com/",
+      planLink: true
+    },
+    openai: {
+      switchTo: "anthropic",
+      switchLabel: "⇄ 切换到 Anthropic 课程",
+      eyebrow: "OPENAI ACADEMY · 2026",
+      dataDir: "data/openai/",
+      storageSuffix: ":openai",
+      sourceLabel: "OpenAI 课程",
+      sourceUrl: "https://academy.openai.com/",
+      planLink: false
+    }
+  };
+  /* URL ?v= 优先 → localStorage 记忆 → 默认 anthropic */
+  const provider = (function () {
+    const fromUrl = new URLSearchParams(location.search).get("v");
+    const remembered = localStorage.getItem("cc-map-provider");
+    const p = PROVIDERS[fromUrl] ? fromUrl : (PROVIDERS[remembered] ? remembered : "anthropic");
+    localStorage.setItem("cc-map-provider", p);
+    document.body.dataset.provider = p;
+    return p;
+  })();
+  const P = PROVIDERS[provider];
+
+  const PREVIEW_KEY = "cc-map-preview" + P.storageSuffix;
   const STATUS_TEXT = { done: "已点亮", preview: "预览点亮", doing: "进行中", todo: "未点亮" };
+
+  function tierColor(t) {
+    return (state.data.tiers[t] || {}).colorHex || "#3987e5";
+  }
 
   const state = {
     data: null,
@@ -33,7 +70,7 @@
     localStorage.setItem(PREVIEW_KEY, JSON.stringify(state.preview));
   }
 
-  const PASSED_KEY = "cc-map-quiz-passed";
+  const PASSED_KEY = "cc-map-quiz-passed" + P.storageSuffix;
   function loadPassed() {
     try { return JSON.parse(localStorage.getItem(PASSED_KEY)) || {}; }
     catch (e) { return {}; }
@@ -44,7 +81,8 @@
 
   async function loadData() {
     const [courses, knowledge, projects, progress, quiz] = await Promise.all(
-      ["data/courses.json", "data/knowledge.json", "data/projects.json", "data/progress.json", "data/quiz.json"]
+      ["courses.json", "knowledge.json", "projects.json", "progress.json", "quiz.json"]
+        .map(f => P.dataDir + f)
         .map(u => fetch(u).then(r => {
           if (!r.ok) throw new Error(u + " → HTTP " + r.status);
           return r.json();
@@ -57,6 +95,7 @@
     state.data = {
       courses: courses.courses,
       tiers: courses.tiers,
+      layout: courses.layout,
       knowledge: knowledge.knowledge,
       knowledgeByCourse: knowledgeByCourse,
       projects: projects.projects,
@@ -64,6 +103,10 @@
       kById: Object.fromEntries(knowledge.knowledge.map(k => [k.id, k]))
     };
     state.progress = progress;
+    /* 梯队色的唯一数据源是 courses.json，同步到 CSS 变量，页面 chrome 与星图保持一致 */
+    Object.keys(state.data.tiers).forEach(t => {
+      document.documentElement.style.setProperty("--t" + t, state.data.tiers[t].colorHex);
+    });
   }
 
   /* ---------- 课程/项目完成的推导 ---------- */
@@ -85,8 +128,8 @@
     const doneProjects = state.data.projects.filter(p => state.statusOf("projects", p.id) === "done").length;
     document.getElementById("stat-stars").textContent =
       doneStars + " / " + state.data.knowledge.length + " 颗星已点亮" + (previewStars ? "（+" + previewStars + " 预览）" : "");
-    document.getElementById("stat-courses").textContent = doneCourses + " / 20 门课完成";
-    document.getElementById("stat-projects").textContent = doneProjects + " / 5 个项目达成";
+    document.getElementById("stat-courses").textContent = doneCourses + " / " + state.data.courses.length + " 门课完成";
+    document.getElementById("stat-projects").textContent = doneProjects + " / " + state.data.projects.length + " 个项目达成";
   }
 
   /* ---------- 预览横幅 ---------- */
@@ -113,7 +156,7 @@
     Quiz.open({
       k: k,
       course: course,
-      color: TIER_COLOR[course.tier],
+      color: tierColor(course.tier),
       quiz: state.data.quiz[k.id] || null,
       state: state,
       passedDate: () => state.passed[k.id] || null,
@@ -152,8 +195,8 @@
     const sizes = [48, 58, 68, 80, 96];
     state.data.projects.forEach((p, i) => {
       const st = state.statusOf("projects", p.id);
-      const size = sizes[i];
-      const color = ["#199e70", "#199e70", "#3987e5", "#3987e5", "#c98500"][i];
+      const size = sizes[i] || 68;
+      const color = tierColor([1, 1, 2, 2, 3][i] || 3);
 
       const card = document.createElement("article");
       card.className = "project-card";
@@ -209,7 +252,7 @@
         return s === "done" || s === "preview";
       }).length;
       const cst = courseStatus(c);
-      const color = TIER_COLOR[c.tier];
+      const color = tierColor(c.tier);
 
       const details = document.createElement("details");
       details.className = "course-k";
@@ -287,6 +330,22 @@
     renderAll();
   });
 
+  /* ---------- 厂商相关的页面 chrome：眉题、页脚链接、切换按钮 ---------- */
+  function renderChrome() {
+    document.getElementById("eyebrow").textContent = P.eyebrow;
+    const src = document.getElementById("source-link");
+    src.textContent = P.sourceLabel;
+    src.href = P.sourceUrl;
+    document.getElementById("plan-link-wrap").hidden = !P.planLink;
+    const sw = document.getElementById("switch-provider");
+    sw.textContent = P.switchLabel;
+    sw.addEventListener("click", () => {
+      localStorage.setItem("cc-map-provider", P.switchTo);
+      location.search = "?v=" + P.switchTo; /* 整页刷新，状态最干净 */
+    });
+  }
+
+  renderChrome();
   loadData()
     .then(() => { setupTabs(); renderAll(); Heatmap.init(); })
     .catch(err => {
