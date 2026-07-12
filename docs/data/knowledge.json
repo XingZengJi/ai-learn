@@ -7,6 +7,7 @@
     { "id": "k0105", "course": "c01", "name": "Artifacts 创作与分享" },
     { "id": "k0106", "course": "c01", "name": "连接工具与企业搜索" },
     { "id": "k0107", "course": "c01", "name": "Research 深度研究模式" },
+    { "id": "k0108", "course": "c01", "name": "Skills 初识与文档创建" },
 
     { "id": "k0201", "course": "c02", "name": "Claude Code 是什么与工作原理" },
     { "id": "k0202", "course": "c02", "name": "安装与第一个提示" },

@@ -13,6 +13,7 @@
   --t3: #c98500;
   --star-todo: #2b3550;
   --star-todo-stroke: #3a4666;
+  --bad: #e0566a;
   --font-display: "Songti SC", "Noto Serif CJK SC", "Noto Serif SC", STSong, SimSun, serif;
   --font-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", monospace;
@@ -230,8 +231,87 @@ details.course-k summary .list-row { border-bottom: none; }
   padding: 36px 16px 44px;
 }
 
+/* ============ 知识点详情 / 测验弹窗 ============ */
+.k-modal {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.k-modal[hidden] { display: none; }
+.k-modal-backdrop { position: absolute; inset: 0; background: rgba(4, 7, 15, 0.72); }
+.k-modal-box {
+  position: relative; width: min(600px, 100%);
+  max-height: min(84vh, 720px); overflow-y: auto;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line); border-radius: 16px;
+  padding: 30px 30px 26px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.k-modal-close {
+  position: absolute; top: 10px; right: 14px;
+  background: none; border: none; color: var(--ink-3);
+  font-size: 24px; line-height: 1; padding: 6px;
+}
+.k-modal-close:hover { color: var(--ink); }
+
+.kd-head h2 { font-family: var(--font-display); font-size: 24px; margin: 10px 0 2px; letter-spacing: 0.04em; }
+.kd-status { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.kd-status.done { color: var(--t1); }
+.kd-status.preview { color: #ecd9a0; }
+.kd-summary { color: var(--ink-2); font-size: 14.5px; margin: 16px 0 4px; }
+.kd-summary.empty { color: var(--ink-3); font-style: italic; }
+.kd-actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.kd-btn {
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 9px 26px; font-size: 14.5px;
+}
+.kd-btn:hover { border-color: var(--ink-3); }
+.kd-btn.primary { border-color: var(--t2); background: rgba(57, 135, 229, 0.12); }
+.kd-btn.primary:hover { background: rgba(57, 135, 229, 0.22); }
+.kd-hint { font-size: 12.5px; color: var(--ink-3); }
+.kd-passed { font-family: var(--font-mono); font-size: 12.5px; color: var(--t1); }
+
+.kq-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.kq-progress { color: var(--ink-3); font-size: 13px; }
+.kq-title { font-size: 15px; color: var(--ink-2); font-weight: 400; }
+.kq-q { font-size: 16px; font-weight: 600; line-height: 1.65; margin-bottom: 16px; }
+.kq-options { display: flex; flex-direction: column; gap: 8px; }
+.kq-opt {
+  display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%;
+  background: var(--surface); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 14px; font-size: 14px; line-height: 1.55;
+}
+.kq-opt:not(:disabled):hover { border-color: var(--t2); color: var(--ink); }
+.kq-opt:disabled { cursor: default; opacity: 0.55; }
+.kq-opt.correct { border-color: var(--t1); color: var(--ink); background: rgba(25, 158, 112, 0.12); opacity: 1; }
+.kq-opt.wrong { border-color: var(--bad); color: var(--ink); background: rgba(224, 86, 106, 0.10); opacity: 1; }
+.kq-letter { flex: none; color: var(--ink-3); }
+.kq-explain {
+  margin: 16px 0; padding: 12px 14px; border-radius: 10px;
+  font-size: 13.5px; color: var(--ink-2); line-height: 1.7;
+  background: var(--surface); border-left: 3px solid var(--t1);
+}
+.kq-explain.wrong { border-left-color: var(--bad); }
+.kq-explain strong { color: var(--ink); margin-right: 8px; }
+
+.kq-result { text-align: center; padding: 18px 6px 6px; }
+.kq-result h2 { font-family: var(--font-display); font-size: 24px; margin: 12px 0; }
+.kq-note { color: var(--ink-2); font-size: 14px; max-width: 420px; margin: 0 auto 20px; }
+.kq-star {
+  font-size: 54px; line-height: 1;
+  text-shadow: 0 0 24px currentColor;
+  animation: star-pop 0.7s ease-out;
+}
+@keyframes star-pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.25); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.kq-result .kd-btn { margin: 0 6px; }
+
 @media (prefers-reduced-motion: reduce) {
-  .dust.tw, .star.lit circle.core, .constellation-halo { animation: none; }
+  .dust.tw, .star.lit circle.core, .constellation-halo, .kq-star { animation: none; }
 }
 
 @media (max-width: 640px) {

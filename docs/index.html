@@ -43,7 +43,7 @@
       <span class="lg"><span class="dot done t1"></span>已点亮</span>
       <span class="lg"><span class="dot preview"></span>预览点亮（未保存）</span>
       <span class="lg"><span class="dot todo"></span>未点亮</span>
-      <span class="lg hint">点击星星可预览点亮效果；正式点亮请告诉 Claude</span>
+      <span class="lg hint">点击星星查看知识点详情，通过测验点亮；正式点亮请告诉 Claude</span>
     </p>
   </section>
 
@@ -72,9 +72,18 @@
   <a href="https://anthropic.skilljar.com/">Anthropic 课程</a>
 </footer>
 
+<div id="k-modal" class="k-modal" hidden>
+  <div class="k-modal-backdrop"></div>
+  <div class="k-modal-box" role="dialog" aria-modal="true" aria-labelledby="k-modal-title">
+    <button class="k-modal-close" type="button" aria-label="关闭">×</button>
+    <div class="k-modal-body"></div>
+  </div>
+</div>
+
 <div id="tooltip" class="tooltip" hidden></div>
 
 <script src="js/starmap.js"></script>
+<script src="js/quiz.js"></script>
 <script src="js/heatmap.js"></script>
 <script src="js/app.js"></script>
 </body>
