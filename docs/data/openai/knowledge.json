@@ -1,0 +1,29 @@
+{
+  "knowledge": [
+    { "id": "k0101", "course": "c01", "name": "认识 AI 与 LLM 能做什么" },
+    { "id": "k0102", "course": "c01", "name": "模型是如何训练的" },
+    { "id": "k0103", "course": "c01", "name": "可信来源与人工审查" },
+    { "id": "k0104", "course": "c01", "name": "清晰指令：任务 / 概念 / 期望" },
+    { "id": "k0105", "course": "c01", "name": "审查与改进输出" },
+    { "id": "k0106", "course": "c01", "name": "添加上下文：文件 / 搜索 / 偏好" },
+    { "id": "k0107", "course": "c01", "name": "负责任地使用 ChatGPT" },
+
+    { "id": "k0201", "course": "c02", "name": "从单条提示到工作流" },
+    { "id": "k0202", "course": "c02", "name": "推理模型：何时用、擅长什么" },
+    { "id": "k0203", "course": "c02", "name": "人在环中：把自己留在流程里" },
+    { "id": "k0204", "course": "c02", "name": "用文件与数据" },
+    { "id": "k0205", "course": "c02", "name": "搜索与深度研究" },
+    { "id": "k0206", "course": "c02", "name": "多模态输入与插件" },
+    { "id": "k0207", "course": "c02", "name": "工作流设计：目标与步骤拆解" },
+    { "id": "k0208", "course": "c02", "name": "检查点与工作流计划" },
+    { "id": "k0209", "course": "c02", "name": "把工作流做成 Skill" },
+
+    { "id": "k0301", "course": "c03", "name": "从「提问」到「派活」：Agent 思维" },
+    { "id": "k0302", "course": "c03", "name": "Agent 干好活需要什么" },
+    { "id": "k0303", "course": "c03", "name": "按任务选工具与工作流" },
+    { "id": "k0304", "course": "c03", "name": "ChatGPT Work：项目与上下文" },
+    { "id": "k0305", "course": "c03", "name": "指挥 Agent 并审查产出" },
+    { "id": "k0306", "course": "c03", "name": "改进、打包与复用工作流" },
+    { "id": "k0307", "course": "c03", "name": "负责任地使用 Agent" }
+  ]
+}
