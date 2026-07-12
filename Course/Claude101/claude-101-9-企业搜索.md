@@ -1,6 +1,6 @@
-# Claude 101 - 8 Enterprise Search 企业搜索
+# Claude 101 - 9 Enterprise Search 企业搜索
 
-> 课程: Claude 101 · 第三章「扩展 Claude 的覆盖范围」第 2 课(全课程第 8 课)
+> 课程: Claude 101 · 第三章「扩展 Claude 的覆盖范围」第 2 课(全课程第 9 课)
 > 预计用时: 15 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 

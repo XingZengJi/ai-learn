@@ -1,6 +1,6 @@
-# Claude 101 - 7 Connecting Your Tools 连接你的工具
+# Claude 101 - 8 Connecting Your Tools 连接你的工具
 
-> 课程: Claude 101 · 第三章「扩展 Claude 的覆盖范围」第 1 课(全课程第 7 课)
+> 课程: Claude 101 · 第三章「扩展 Claude 的覆盖范围」第 1 课(全课程第 8 课)
 > 预计用时: 20 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 

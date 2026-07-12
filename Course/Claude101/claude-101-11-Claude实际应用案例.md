@@ -1,6 +1,6 @@
-# Claude 101 - 10 Claude in Action: Use Cases by Role 按角色划分的 Claude 实际应用案例
+# Claude 101 - 11 Claude in Action: Use Cases by Role 按角色划分的 Claude 实际应用案例
 
-> 课程: Claude 101 · 第四章「综合运用」第 1 课(全课程第 10 课)
+> 课程: Claude 101 · 第四章「综合运用」第 1 课(全课程第 11 课)
 > 预计用时: 10 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 

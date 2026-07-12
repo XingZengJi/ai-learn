@@ -1,6 +1,6 @@
-# Claude 101 - 13 Certificate Quiz 结业测验
+# Claude 101 - 14 Certificate Quiz 结业测验
 
-> 课程: Claude 101 · 第五章「总结与证书」第 2 课(全课程第 13 课,结业测验)
+> 课程: Claude 101 · 第五章「总结与证书」第 2 课(全课程第 14 课,结业测验)
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 > 说明: 原文未标注正确答案(需在平台上作答后由系统判定),本文件仅做题目与选项的中英对照翻译。
 

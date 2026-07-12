@@ -1,6 +1,6 @@
-# Claude 101 - 11 Other Ways to Work with Claude Claude 的更多使用方式
+# Claude 101 - 12 Other Ways to Work with Claude Claude 的更多使用方式
 
-> 课程: Claude 101 · 第四章「综合运用」第 2 课(全课程第 11 课)
+> 课程: Claude 101 · 第四章「综合运用」第 2 课(全课程第 12 课)
 > 预计用时: 10 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 

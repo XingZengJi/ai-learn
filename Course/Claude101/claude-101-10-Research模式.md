@@ -1,6 +1,6 @@
-# Claude 101 - 9 Research Mode for Deep Dives Research 模式:深度研究
+# Claude 101 - 10 Research Mode for Deep Dives Research 模式:深度研究
 
-> 课程: Claude 101 · 第三章「扩展 Claude 的覆盖范围」第 3 课(全课程第 9 课)
+> 课程: Claude 101 · 第三章「扩展 Claude 的覆盖范围」第 3 课(全课程第 10 课)
 > 预计用时: 15 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 

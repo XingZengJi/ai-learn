@@ -1,6 +1,6 @@
-# Claude 101 - 5 Creating with Artifacts 创建工件
+# Claude 101 - 6 Creating with Artifacts 创建工件
 
-> 课程: Claude 101 · 第二章「组织你的工作」第 1 课(全课程第 5 课)
+> 课程: Claude 101 · 第二章「组织你的工作」第 2 课(全课程第 6 课)
 > 预计用时: 20 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 > 说明: 沿用第 4 课确认的格式——中文完整翻译为主,英文保留在术语、功能名和示例提示词上。

@@ -1,6 +1,6 @@
-# Claude 101 - 6 Working with Skills 使用 Skills
+# Claude 101 - 7 Working with Skills 使用 Skills
 
-> 课程: Claude 101 · 第二章「组织你的工作」第 2 课(全课程第 6 课)
+> 课程: Claude 101 · 第二章「组织你的工作」第 3 课(全课程第 7 课)
 > 预计用时: 15 分钟
 > 来源: Anthropic Academy (anthropic.skilljar.com),用户登录后提供英文原文,2026-07-12 翻译存档
 
