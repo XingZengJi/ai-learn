@@ -10,6 +10,7 @@
     data: null,
     progress: null,
     preview: loadPreview(),
+    passed: loadPassed(), /* 测验通过记录 { k0101: "2026-07-11" }，独立于预览 */
     /* 权威优先：done > preview > doing > todo */
     statusOf(type, id) {
       const auth = (this.progress[type] || {})[id];
@@ -32,9 +33,18 @@
     localStorage.setItem(PREVIEW_KEY, JSON.stringify(state.preview));
   }
 
+  const PASSED_KEY = "cc-map-quiz-passed";
+  function loadPassed() {
+    try { return JSON.parse(localStorage.getItem(PASSED_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function savePassed() {
+    localStorage.setItem(PASSED_KEY, JSON.stringify(state.passed));
+  }
+
   async function loadData() {
-    const [courses, knowledge, projects, progress] = await Promise.all(
-      ["data/courses.json", "data/knowledge.json", "data/projects.json", "data/progress.json"]
+    const [courses, knowledge, projects, progress, quiz] = await Promise.all(
+      ["data/courses.json", "data/knowledge.json", "data/projects.json", "data/progress.json", "data/quiz.json"]
         .map(u => fetch(u).then(r => {
           if (!r.ok) throw new Error(u + " → HTTP " + r.status);
           return r.json();
@@ -50,6 +60,7 @@
       knowledge: knowledge.knowledge,
       knowledgeByCourse: knowledgeByCourse,
       projects: projects.projects,
+      quiz: quiz,
       kById: Object.fromEntries(knowledge.knowledge.map(k => [k.id, k]))
     };
     state.progress = progress;
@@ -88,18 +99,39 @@
       "有 " + n + " 个未保存的预览点亮 — 学完后告诉 Claude「点亮」正式保存进仓库";
   }
 
+  /* ---------- 知识点详情弹窗 ---------- */
+  function togglePreview(kid) {
+    const key = "knowledge:" + kid;
+    if (state.preview[key]) delete state.preview[key];
+    else state.preview[key] = true;
+    savePreview();
+    renderAll();
+  }
+
+  function openKnowledge(k) {
+    const course = state.data.courses.find(c => c.id === k.course);
+    Quiz.open({
+      k: k,
+      course: course,
+      color: TIER_COLOR[course.tier],
+      quiz: state.data.quiz[k.id] || null,
+      state: state,
+      passedDate: () => state.passed[k.id] || null,
+      onTogglePreview: () => togglePreview(k.id),
+      onPass: () => {
+        state.passed[k.id] = new Date().toISOString().slice(0, 10);
+        savePassed();
+        if (!state.preview["knowledge:" + k.id]) togglePreview(k.id);
+        else renderAll();
+      }
+    });
+  }
+
   /* ---------- 星图 ---------- */
   const tooltip = document.getElementById("tooltip");
   function renderStarmap() {
     Starmap.render(document.getElementById("starmap"), state.data, state, {
-      onStarClick(k) {
-        if (state.statusOf("knowledge", k.id) === "done") return; /* 已正式点亮的不可改 */
-        const key = "knowledge:" + k.id;
-        if (state.preview[key]) delete state.preview[key];
-        else state.preview[key] = true;
-        savePreview();
-        renderAll();
-      },
+      onStarClick(k) { openKnowledge(k); },
       onStarHover(k, course, st, e) {
         tooltip.innerHTML = "<strong>" + k.name + "</strong>" +
           "<div class='tt-sub'>" + course.cn + " · " + STATUS_TEXT[st] +
@@ -202,15 +234,7 @@
           '<span class="status-dot ' + st + '" style="color:' + color + '"></span>' +
           "<span>" + k.name + "</span>" +
           '<span class="kdate">' + (st === "done" ? (state.dateOf("knowledge", k.id) || "") : STATUS_TEXT[st]) + "</span>";
-        btn.addEventListener("click", () => {
-          if (state.statusOf("knowledge", k.id) === "done") return;
-          const key = "knowledge:" + k.id;
-          if (state.preview[key]) delete state.preview[key];
-          else state.preview[key] = true;
-          savePreview();
-          renderAll();
-          details.open = true;
-        });
+        btn.addEventListener("click", () => openKnowledge(k));
         kwrap.appendChild(btn);
       });
       details.appendChild(kwrap);
