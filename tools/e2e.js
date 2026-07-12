@@ -62,7 +62,8 @@ async function makePage(provider) {
   check("星图星数 = knowledge.json 条数（" + stars.length + "）", stars.length === knowledge.length);
   check("列表渲染出 20 门课程分组", document.querySelectorAll("#list-root details.course-k").length === 20);
   check("统计行课程数动态化", document.getElementById("stat-courses").textContent.includes("/ 20 门课"));
-  check("切换按钮指向 OpenAI", document.getElementById("switch-provider").textContent.includes("OpenAI"));
+  check("切换按钮文案为「⇄ OpenAI 课程」", document.getElementById("switch-provider").textContent === "⇄ OpenAI 课程");
+  check("大标题为「CC 学习成就地图」", document.getElementById("site-title").textContent === "CC 学习成就地图");
 
   console.log("— Anthropic · 详情弹窗（有题库知识点 k0101）—");
   const modal = document.getElementById("k-modal");
@@ -138,6 +139,7 @@ async function makePage(provider) {
 
   console.log("— OpenAI · 渲染与主题 —");
   check("body 打上 openai 标记", doc2.body.dataset.provider === "openai");
+  check("大标题为「OpenAI 学习成就地图」", doc2.getElementById("site-title").textContent === "OpenAI 学习成就地图");
   check("眉题为 OPENAI ACADEMY", doc2.getElementById("eyebrow").textContent.includes("OPENAI ACADEMY"));
   const oStars = doc2.querySelectorAll("#starmap .star");
   check("星数 = openai knowledge 条数（" + oStars.length + " / 应为 " + oKnowledge.length + "）", oStars.length === oKnowledge.length);
@@ -146,7 +148,7 @@ async function makePage(provider) {
   check("切换按钮指向 Anthropic", doc2.getElementById("switch-provider").textContent.includes("Anthropic"));
   check("页脚课程链接指向 OpenAI Academy", doc2.getElementById("source-link").href.includes("academy.openai.com"));
   check("学习计划链接隐藏", doc2.getElementById("plan-link-wrap").hidden === true);
-  check("梯队色注入 CSS 变量", win2.document.documentElement.style.getPropertyValue("--t1") === "#10a37f");
+  check("梯队色注入 CSS 变量", win2.document.documentElement.style.getPropertyValue("--t1") === "#12a5bd");
   check("星图 viewBox 用紧凑布局", doc2.getElementById("starmap").getAttribute("viewBox") === "0 0 1200 520");
 
   console.log("— OpenAI · 详情：概要 + 直接预览点亮（题库为空）—");

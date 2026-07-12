@@ -6,7 +6,8 @@
   const PROVIDERS = {
     anthropic: {
       switchTo: "openai",
-      switchLabel: "⇄ 切换到 OpenAI 课程",
+      switchLabel: "⇄ OpenAI 课程",
+      title: "CC 学习成就地图",
       eyebrow: "ANTHROPIC SKILLJAR · 2026",
       dataDir: "data/anthropic/",
       storageSuffix: "",           /* 无后缀 = 兼容既有 localStorage 数据 */
@@ -16,7 +17,8 @@
     },
     openai: {
       switchTo: "anthropic",
-      switchLabel: "⇄ 切换到 Anthropic 课程",
+      switchLabel: "⇄ Anthropic 课程",
+      title: "OpenAI 学习成就地图",
       eyebrow: "OPENAI ACADEMY · 2026",
       dataDir: "data/openai/",
       storageSuffix: ":openai",
@@ -332,6 +334,8 @@
 
   /* ---------- 厂商相关的页面 chrome：眉题、页脚链接、切换按钮 ---------- */
   function renderChrome() {
+    document.getElementById("site-title").textContent = P.title;
+    document.title = P.title;
     document.getElementById("eyebrow").textContent = P.eyebrow;
     const src = document.getElementById("source-link");
     src.textContent = P.sourceLabel;
