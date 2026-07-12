@@ -1,0 +1,49 @@
+{
+  "projects": [
+    {
+      "id": "p1",
+      "level": "初级",
+      "name": "Prompt 实验手册",
+      "desc": "草稿：用「任务/概念/期望」框架对同一任务做好坏提示对比实验，沉淀成一份自己的提示手册",
+      "weeks": "待定",
+      "covers": ["k0104", "k0105"],
+      "extraSkills": []
+    },
+    {
+      "id": "p2",
+      "level": "初中级",
+      "name": "Custom GPT 解决一个重复任务",
+      "desc": "草稿：挑一件每周都要做的事，配置一个带指令和知识文件的自定义 GPT 替你完成",
+      "weeks": "待定",
+      "covers": ["k0104", "k0106", "k0107"],
+      "extraSkills": ["Custom GPT 配置"]
+    },
+    {
+      "id": "p3",
+      "level": "中级",
+      "name": "会议工作流包",
+      "desc": "草稿：课程实战——把例会准备改造成带检查点的可复用 AI 工作流（Applied AI Foundations 的随课产出）",
+      "weeks": "待定",
+      "covers": ["k0201", "k0207", "k0208", "k0203"],
+      "extraSkills": []
+    },
+    {
+      "id": "p4",
+      "level": "进阶",
+      "name": "Agent 项目简报实战",
+      "desc": "草稿：课程实战——让 Agent 把散落的笔记、消息和文件整合成可复用的项目简报工作流（Agents and Workflows 的随课产出）",
+      "weeks": "待定",
+      "covers": ["k0301", "k0304", "k0305", "k0306"],
+      "extraSkills": []
+    },
+    {
+      "id": "p5",
+      "level": "毕业",
+      "name": "OpenAI API 产品雏形",
+      "desc": "草稿：调用 OpenAI API 做一个真实小产品雏形，综合运用提示、工作流与 Agent 所学",
+      "weeks": "待定",
+      "covers": ["k0209", "k0303", "k0306"],
+      "extraSkills": ["OpenAI API", "部署上线"]
+    }
+  ]
+}

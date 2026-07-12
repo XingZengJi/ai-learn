@@ -1,0 +1,6 @@
+{
+  "_说明": "OpenAI 版唯一权威进度文件。只记录 doing / done 的条目，未出现的一律视为 todo。点亮方式：告诉 Claude「点亮 OpenAI 的 XX」，由 Claude 更新此文件并提交。",
+  "courses": {},
+  "knowledge": {},
+  "projects": {}
+}

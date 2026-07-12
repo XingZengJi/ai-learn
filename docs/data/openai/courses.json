@@ -1,0 +1,21 @@
+{
+  "tiers": {
+    "1": { "name": "官方证书课程", "colorHex": "#10a37f" },
+    "2": { "name": "主题深入（待策展）", "colorHex": "#13a3b5" },
+    "3": { "name": "按需选修（待策展）", "colorHex": "#7c6ff0" }
+  },
+  "layout": {
+    "viewBox": [1200, 520],
+    "regions": [
+      { "tier": 1, "y": 56, "label": "第一天区 · 官方证书课程 · CERTIFICATE PATH" }
+    ],
+    "slots": {
+      "1": [[230, 260], [600, 245], [970, 260]]
+    }
+  },
+  "courses": [
+    { "id": "c01", "order": 1, "en": "AI Foundations", "cn": "AI 基础", "tier": 1, "url": "https://academy.openai.com/pages/courses", "summary": "理解 AI 与大语言模型的原理和局限，学会用清晰提示、上下文与人工审查驾驭 ChatGPT", "prereq": [] },
+    { "id": "c02", "order": 2, "en": "Applied AI Foundations", "cn": "应用 AI 基础", "tier": 1, "url": "https://academy.openai.com/pages/courses", "summary": "把重复任务改造成带检查点的可复用工作流，课程产出一份你自己的会议工作流包", "prereq": ["c01"] },
+    { "id": "c03", "order": 3, "en": "Agents and Workflows", "cn": "智能体与工作流", "tier": 1, "url": "https://academy.openai.com/pages/courses", "summary": "从「提问」升级到「派活」：给 Agent 上下文与边界，指挥它完成多步骤工作并沉淀为可复用技能", "prereq": ["c02"] }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "_说明": "OpenAI 版知识点概要与题库。概要依据官方课程的模块/课时目录整理；questions 留空 = 题库待补充（详情页走「直接预览点亮」），学完课程后按 CLAUDE.md「补题库」工作流补齐。",
+  "k0101": {
+    "summary": "对应 AI Foundations 模块 2 前半：什么是 AI、大语言模型（LLM）能做什么。建立对 ChatGPT 底层这类模型的能力边界的基本认知。",
+    "questions": []
+  },
+  "k0102": {
+    "summary": "对应模块 2「How models are trained」：模型是用海量数据训练出来的模式预测器——理解这一点，就能理解它为什么强大、也为什么会出错。",
+    "questions": []
+  },
+  "k0103": {
+    "summary": "对应模块 2 后半：知道什么时候该查可信来源（而不是直接信模型），以及为什么 AI 的输出始终需要人来审查。",
+    "questions": []
+  },
+  "k0104": {
+    "summary": "对应模块 3 前半：清晰指令为什么重要，以及官方的提示框架——说清任务（Task）、概念（Concept）和期望（Expectation）。",
+    "questions": []
+  },
+  "k0105": {
+    "summary": "对应模块 3 后半：拿到输出先审查（对不对、全不全、合不合用），再通过追问和反馈迭代改进。",
+    "questions": []
+  },
+  "k0106": {
+    "summary": "对应模块 4「Add Context」：为什么上下文重要、该补什么上下文——上传文件、启用搜索、把常用偏好保存下来。",
+    "questions": []
+  },
+  "k0107": {
+    "summary": "对应模块 5「Responsible Use」：谨慎分享信息、让自己留在决策环节中、做负责任的使用选择。",
+    "questions": []
+  },
+  "k0201": {
+    "summary": "对应 Applied AI Foundations 模块 1：从单条提示升级到多步骤工作流的思维转变，以及如何挑选适合自己的第一个工作流。",
+    "questions": []
+  },
+  "k0202": {
+    "summary": "对应模块 2 前半：推理模型（Reasoning Models）是什么、什么时候该用、擅长处理哪类问题。",
+    "questions": []
+  },
+  "k0203": {
+    "summary": "对应模块 2.3 与 5.3（两个模块反复强调）：在 AI 工作流中把自己留在环节里——AI 出活，人做判断和把关。",
+    "questions": []
+  },
+  "k0204": {
+    "summary": "对应模块 3.2「Use Files and Data」：在工作流中使用文件与数据作为输入。",
+    "questions": []
+  },
+  "k0205": {
+    "summary": "对应模块 3.3「Use Search and Deep Research」：什么时候用搜索、什么时候用深度研究（Deep Research）。",
+    "questions": []
+  },
+  "k0206": {
+    "summary": "对应模块 3.4–3.5：多模态输入（图片等）与插件的使用，以及如何为任务选择合适的能力组合。",
+    "questions": []
+  },
+  "k0207": {
+    "summary": "对应模块 4 前半：工作流设计方法——从目标出发、把工作拆成步骤、写成工作流笔记。",
+    "questions": []
+  },
+  "k0208": {
+    "summary": "对应模块 4 中后段：给工作流加人工审查点（review points）、形成完整的工作流计划，并反思它与你角色的关系。",
+    "questions": []
+  },
+  "k0209": {
+    "summary": "对应模块 4.6「Set Up a skill」：把打磨好的工作流固化成可复用的 Skill。",
+    "questions": []
+  },
+  "k0301": {
+    "summary": "对应 Agents and Workflows 模块 1 与 2.1：从「向 AI 提问」到「给 Agent 派活」的思维升级，看 ChatGPT 替你完成整件事。",
+    "questions": []
+  },
+  "k0302": {
+    "summary": "对应模块 2.2：Agent 干好一件活需要什么——清晰的任务定义、充分的上下文、明确的产出要求。",
+    "questions": []
+  },
+  "k0303": {
+    "summary": "对应模块 2.3–2.5：按任务选择合适的工具，从一个工作流开始，也知道何时换一个替代工作流。",
+    "questions": []
+  },
+  "k0304": {
+    "summary": "对应模块 3 前半：认识 ChatGPT Work，创建项目并为 Agent 提供上下文（散落的笔记、消息、会议纪要、项目文件）。",
+    "questions": []
+  },
+  "k0305": {
+    "summary": "对应模块 3 后半：指挥 Agent 完成任务生成初稿，然后逐项审查它的产出。",
+    "questions": []
+  },
+  "k0306": {
+    "summary": "对应模块 4：根据审查结果改进工作流，把它打包成可复用的形式（如 Skill），再挑下一个工作流。",
+    "questions": []
+  },
+  "k0307": {
+    "summary": "对应模块 5：负责任地使用 Agent——边界、审查义务，以及对 Agent 产出负最终责任的是你。",
+    "questions": []
+  }
+}
