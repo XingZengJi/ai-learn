@@ -2,7 +2,7 @@
 
 系统学习 [Anthropic 官方课程](https://anthropic.skilljar.com/)（共 20 门）的公开学习仓库。
 
-🌌 **[CC 学习成就地图](https://xingzengji.github.io/ai-learn/)** — 以星空技能树的形式可视化整个学习旅程：知识点是星星，课程是星座，实战项目是行星，学完即点亮；底部同步 GitHub 贡献热力图。
+🌌 **[CC 学习成就地图](https://xingzengji.github.io/ai-learn/)** — 以星空技能树的形式可视化整个学习旅程：知识点是星星，课程是星座，实战项目是行星，学完即点亮；底部同步 GitHub 贡献热力图。右上角可切换到 [OpenAI Academy](https://academy.openai.com/) 课程版（青绿主题，[直达链接](https://xingzengji.github.io/ai-learn/?v=openai)）。
 
 ## 仓库结构
 

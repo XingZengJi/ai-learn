@@ -16,15 +16,16 @@
 </div>
 
 <header class="site-header">
-  <p class="eyebrow">ANTHROPIC SKILLJAR · 20 COURSES · 2026</p>
+  <button id="switch-provider" class="switch-btn" type="button"></button>
+  <p class="eyebrow" id="eyebrow">ANTHROPIC SKILLJAR · 2026</p>
   <h1>CC 学习成就地图</h1>
   <p class="subtitle">知识点是星星，课程是星座，项目是行星 —— 学完一个，点亮一颗。</p>
   <p class="progress-line">
     <span class="mono" id="stat-stars">— / — 颗星已点亮</span>
     <span class="sep">·</span>
-    <span class="mono" id="stat-courses">— / 20 门课完成</span>
+    <span class="mono" id="stat-courses">— / — 门课完成</span>
     <span class="sep">·</span>
-    <span class="mono" id="stat-projects">— / 5 个项目达成</span>
+    <span class="mono" id="stat-projects">— / — 个项目达成</span>
   </p>
 </header>
 
@@ -66,10 +67,9 @@
 
 <footer class="site-footer">
   <a href="https://github.com/XingZengJi/ai-learn">学习仓库</a>
+  <span id="plan-link-wrap"><span class="sep">·</span><a href="https://github.com/XingZengJi/ai-learn/blob/main/%E5%AD%A6%E4%B9%A0%E8%AE%A1%E5%88%92.md">学习计划</a></span>
   <span class="sep">·</span>
-  <a href="https://github.com/XingZengJi/ai-learn/blob/main/%E5%AD%A6%E4%B9%A0%E8%AE%A1%E5%88%92.md">学习计划</a>
-  <span class="sep">·</span>
-  <a href="https://anthropic.skilljar.com/">Anthropic 课程</a>
+  <a href="https://anthropic.skilljar.com/" id="source-link">Anthropic 课程</a>
 </footer>
 
 <div id="k-modal" class="k-modal" hidden>

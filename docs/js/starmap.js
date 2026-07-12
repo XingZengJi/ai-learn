@@ -1,21 +1,13 @@
-/* 星图渲染：知识点=星星，课程=星座，梯队=天区 */
+/* 星图渲染：知识点=星星，课程=星座，梯队=天区。
+ * 天区/槽位/梯队色全部来自 courses.json 的 layout 与 tiers 字段（按厂商数据驱动）。 */
 (function () {
   "use strict";
 
   const SVG_NS = "http://www.w3.org/2000/svg";
-  const TIER_COLOR = { 1: "#199e70", 2: "#3987e5", 3: "#c98500" };
 
-  /* 每门课星座中心的固定槽位（按梯队分天区） */
-  const SLOTS = {
-    1: [ [180, 150], [530, 140], [890, 150], [190, 330], [540, 320], [900, 330] ],
-    2: [ [190, 575], [520, 560], [850, 575], [350, 675], [730, 670] ],
-    3: [ [140, 845], [375, 845], [610, 845], [845, 845], [1080, 845], [255, 925], [490, 925], [725, 925], [960, 925] ]
-  };
-  const REGIONS = [
-    { tier: 1, y: 56, label: "第一天区 · 使用与协作" },
-    { tier: 2, y: 480, label: "第二天区 · 工程与开发" },
-    { tier: 3, y: 800, label: "第三天区 · 按需选修" }
-  ];
+  function tierColor(data, t) {
+    return (data.tiers[t] || {}).colorHex || "#3987e5";
+  }
 
   /* 稳定的伪随机数：同一课程每次渲染布局一致 */
   function seedOf(str) {
@@ -42,11 +34,12 @@
   /* 计算全部星星坐标；返回 { starPos: {kid: [x,y]}, centers: {cid: [x,y]} } */
   function layout(data) {
     const centers = {}, starPos = {};
-    const byTier = { 1: [], 2: [], 3: [] };
-    data.courses.forEach(c => byTier[c.tier].push(c));
-    for (const tier of [1, 2, 3]) {
+    const slots = data.layout.slots;
+    const byTier = {};
+    data.courses.forEach(c => (byTier[c.tier] = byTier[c.tier] || []).push(c));
+    for (const tier of Object.keys(byTier)) {
       byTier[tier].forEach((course, i) => {
-        const slot = SLOTS[tier][i] || [600, 400];
+        const slot = (slots[tier] || [])[i] || [600, 400];
         centers[course.id] = slot;
         const stars = data.knowledgeByCourse[course.id] || [];
         const n = stars.length;
@@ -65,10 +58,12 @@
 
   function render(svg, data, state, handlers) {
     svg.textContent = "";
+    const [vw, vh] = data.layout.viewBox;
+    svg.setAttribute("viewBox", "0 0 " + vw + " " + vh);
     const { centers, starPos } = layout(data);
 
     const defs = el("defs", {});
-    for (const t of [1, 2, 3]) {
+    for (const t of Object.keys(data.tiers)) {
       const f = el("filter", { id: "glow-t" + t, x: "-120%", y: "-120%", width: "340%", height: "340%" });
       const blur = el("feGaussianBlur", { stdDeviation: "3.2", result: "b" });
       const merge = el("feMerge", {});
@@ -79,19 +74,20 @@
 
       /* 整座点亮时的光环渐变 */
       const grad = el("radialGradient", { id: "halo-t" + t });
-      const s0 = el("stop", { offset: "0%", "stop-color": TIER_COLOR[t], "stop-opacity": "0.22" });
-      const s1 = el("stop", { offset: "70%", "stop-color": TIER_COLOR[t], "stop-opacity": "0.07" });
-      const s2 = el("stop", { offset: "100%", "stop-color": TIER_COLOR[t], "stop-opacity": "0" });
+      const s0 = el("stop", { offset: "0%", "stop-color": tierColor(data, t), "stop-opacity": "0.22" });
+      const s1 = el("stop", { offset: "70%", "stop-color": tierColor(data, t), "stop-opacity": "0.07" });
+      const s2 = el("stop", { offset: "100%", "stop-color": tierColor(data, t), "stop-opacity": "0" });
       grad.appendChild(s0); grad.appendChild(s1); grad.appendChild(s2);
       defs.appendChild(grad);
     }
     svg.appendChild(defs);
 
-    /* 背景星尘 */
+    /* 背景星尘（密度随画布面积缩放，保持视觉一致） */
     const dustRng = mulberry32(20260711);
-    for (let i = 0; i < 130; i++) {
+    const dustN = Math.round(130 * (vw * vh) / (1200 * 980));
+    for (let i = 0; i < dustN; i++) {
       const d = el("circle", {
-        cx: (dustRng() * 1200).toFixed(1), cy: (dustRng() * 980).toFixed(1),
+        cx: (dustRng() * vw).toFixed(1), cy: (dustRng() * vh).toFixed(1),
         r: (0.5 + dustRng()).toFixed(2), fill: "#8fa3cc",
         opacity: (0.08 + dustRng() * 0.3).toFixed(2),
         class: "dust" + (dustRng() > 0.75 ? " tw" : "")
@@ -101,11 +97,11 @@
     }
 
     /* 天区标签 */
-    REGIONS.forEach(rg => {
+    data.layout.regions.forEach(rg => {
       const t = el("text", { x: 24, y: rg.y, class: "region-label" });
       t.textContent = rg.label;
       svg.appendChild(t);
-      const tick = el("line", { x1: 24, y1: rg.y + 8, x2: 210, y2: rg.y + 8, stroke: TIER_COLOR[rg.tier], "stroke-width": 2, opacity: 0.5 });
+      const tick = el("line", { x1: 24, y1: rg.y + 8, x2: 210, y2: rg.y + 8, stroke: tierColor(data, rg.tier), "stroke-width": 2, opacity: 0.5 });
       svg.appendChild(tick);
     });
 
@@ -125,7 +121,7 @@
     /* 星座连线 + 星星 + 课程标签 */
     data.courses.forEach(course => {
       const stars = data.knowledgeByCourse[course.id] || [];
-      const color = TIER_COLOR[course.tier];
+      const color = tierColor(data, course.tier);
       const statuses = stars.map(k => state.statusOf("knowledge", k.id));
       const isLit = s => s === "done" || s === "preview";
       const allDone = stars.length > 0 && statuses.every(s => s === "done");
@@ -205,5 +201,5 @@
     });
   }
 
-  window.Starmap = { render: render, TIER_COLOR: TIER_COLOR };
+  window.Starmap = { render: render };
 })();

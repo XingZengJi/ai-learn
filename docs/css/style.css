@@ -38,8 +38,27 @@ a:hover { text-decoration: underline; }
 button { font-family: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--t2); outline-offset: 2px; }
 
+/* ============ 双版本主题 ============ */
+/* 梯队色 --t1/--t2/--t3 的唯一数据源是各厂商 courses.json 的 tiers.colorHex（JS 加载后注入）；
+   这里的同值覆盖只为避免首屏闪色。 */
+body[data-provider="openai"] {
+  --t1: #10a37f;
+  --t2: #13a3b5;
+  --t3: #7c6ff0;
+  background:
+    radial-gradient(ellipse 1200px 600px at 50% -100px, #0f2420 0%, var(--bg) 60%),
+    var(--bg);
+}
+
 /* ============ 页眉 ============ */
 .site-header { text-align: center; padding: 56px 20px 8px; }
+.switch-btn {
+  position: absolute; top: 16px; right: 18px; z-index: 25;
+  background: var(--surface); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 18px; font-size: 13px;
+}
+.switch-btn:hover { color: var(--ink); border-color: var(--t2); }
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 12px; letter-spacing: 0.35em;
@@ -316,6 +335,7 @@ details.course-k summary .list-row { border-bottom: none; }
 
 @media (max-width: 640px) {
   .site-header { padding-top: 36px; }
+  .switch-btn { position: static; display: block; margin: 0 auto 14px; }
   .projects-track::before { left: 39px; }
   .planet { flex-basis: 80px; }
   .list-row .meta { display: none; }
