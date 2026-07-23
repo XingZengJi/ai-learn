@@ -8,6 +8,8 @@
 
 Computer Use(计算机使用)让 Claude 能直接与桌面环境交互,本质上是给了它像人一样操作电脑的能力。这为自动化、测试以及各类超出纯文本生成的复杂工作流打开了新的可能。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559833%2F12_-_007_-_Computer_Use_00.1748559833124.png)
+
 ## What Computer Use Can Do 它能做什么
 
 Claude 不再只是描述该怎么做或生成代码,而是可以真正动手完成任务:
@@ -24,13 +26,19 @@ Claude 不再只是描述该怎么做或生成代码,而是可以真正动手完
 
 设想你做了一个带自动补全的 React 组件,用户可以输入 `@` 来提及文件或资源。乍看没问题,但你想把边界情况都测一遍。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559833%2F12_-_007_-_Computer_Use_04.1748559833651.png)
+
 与其自己手动点每个场景,不如让 Claude 用 Computer Use 来跑 QA。你给它具体的测试用例:
 
 - 确认输入 "Did you read @" 会弹出自动补全选项
 - 测试按回车能正确把一条提及加进文本框
 - 检查添加提及后按退格键时,自动补全列表出现的位置是否正确
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559834%2F12_-_007_-_Computer_Use_16.1748559834042.png)
+
 Claude 会逐条系统地执行,截屏、与界面交互、记录发生了什么。在这个例子里,Claude 发现前两条测试通过,**第三条失败了**——用户按退格键时,自动补全下拉框出现在了错误的位置。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559834%2F12_-_007_-_Computer_Use_18.1748559834522.png)
 
 ## How the Testing Process Works 测试过程
 

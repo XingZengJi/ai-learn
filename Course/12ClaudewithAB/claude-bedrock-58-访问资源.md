@@ -8,6 +8,8 @@
 
 MCP 的资源让服务器暴露的数据可以**直接放进提示词**,而不必通过工具调用去取。这是给模型提供上下文的一种更高效的方式。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559733%2F11_-_008_-_Accessing_Resources_00.1748559733698.png)
+
 ## Understanding the Resource Flow 理解资源流程
 
 当用户在应用里输入类似 "What's in the @..." 时,系统需要拉取一份可用资源清单来做自动补全。MCP 客户端向服务器发送 `ReadResourceRequest`,服务器返回可供引用的文档名列表。

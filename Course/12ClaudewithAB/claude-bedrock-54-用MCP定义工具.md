@@ -8,6 +8,8 @@
 
 用官方 Python SDK 来搭 MCP 服务器会简单很多。你不必手写复杂的工具 JSON schema,而是用装饰器把工具定义出来,重活交给 SDK。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559694%2F11_-_004_-_Defining_Tools_with_MCP_00.1748559694628.png)
+
 本例要做的是一个管理文档操作的 MCP 服务器,包含两个主要工具: 读文档内容、更新文档内容。所有文档以字典形式存在内存里,键是文档 ID,值是内容字符串。
 
 ## MCP Python SDK Benefits Python SDK 的好处
@@ -18,6 +20,8 @@ MCP 项目为多种编程语言提供了构建服务器和客户端的官方 SDK
 - 从 Python 函数签名**自动生成** JSON schema
 - 通过装饰器简化工具定义
 - 处理类型校验和错误处理
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559695%2F11_-_004_-_Defining_Tools_with_MCP_05.1748559695107.png)
 
 `@mcp.tool` 装饰器配合类型标注和字段描述,会自动生成 Claude 能理解并使用的正确工具 schema。
 

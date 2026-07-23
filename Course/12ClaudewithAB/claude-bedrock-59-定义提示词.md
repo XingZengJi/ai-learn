@@ -12,6 +12,8 @@ MCP 服务器可以定义提示词(prompts)——预先写好的高质量指令,
 
 假设你想让 Claude 把一份文档重排成 markdown 格式。你直接说「把 report.pdf 转成 markdown」也能work,但如果用一条经过充分测试、覆盖了各种边界情况、给出了具体格式要求的详细提示词,结果会好得多。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559742%2F11_-_009_-_Defining_Prompts_07.1748559742643.png)
+
 思路很简单: 作为 MCP 服务器的开发者,我们花时间打磨和测试出真正好用的提示词,然后开放给所有使用这个服务器的人。用户不必自己成为提示词工程专家,也能拿到好结果。
 
 ## Defining a Prompt 定义提示词
@@ -71,6 +73,8 @@ from mcp.server.fastmcp.prompts import base
 ## Testing the Prompt 测试提示词
 
 定义好之后可以用 MCP 检查器测试。切到 Prompts 标签页,选中你的提示词,填入所需参数。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559743%2F11_-_009_-_Defining_Prompts_18.1748559743262.png)
 
 检查器会展示将要发给 Claude 的消息内容,你可以据此确认参数插值是否正确、提示词是否包含了全部必要指令。
 

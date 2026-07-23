@@ -8,6 +8,8 @@
 
 Claude 不只能在编辑器里写代码,还能监控你的生产环境应用并自动修复出现的错误,形成一套自动化调试工作流,在问题影响用户之前就把它抓住并解决掉。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559783%2F12_-_006_-_Automated_Debugging_00.1748559782853.png)
+
 ## The Problem: Production-Only Errors 问题: 只在生产环境出现的错误
 
 最让人头疼的调试场景之一,就是应用在开发环境好好的,一上生产就出问题。本地全测过、满怀信心部署,结果发现线上某些功能不工作。
@@ -29,6 +31,8 @@ Claude 不只能在编辑器里写代码,还能监控你的生产环境应用并
 
 与其手动调试,不如做一个每天自动运行的 GitHub Action 来监控生产环境,把整个调试过程交给 Claude。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559783%2F12_-_006_-_Automated_Debugging_13.1748559783322.png)
+
 自动化工作流的运作方式:
 
 1. **准备** —— GitHub Action 检出仓库、安装依赖、配置好 Claude
@@ -42,6 +46,8 @@ Claude 不只能在编辑器里写代码,还能监控你的生产环境应用并
 在那个聊天机器人的例子里,Claude 发现生产环境用了一个无效的模型标识符——起因是只在生产配置里出现的一个模型 ID 拼写错误。
 
 Claude 定位到问题、找到正确的模型 ID 格式、更新了配置文件,并在提交信息里清楚说明了错在哪、怎么修的。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559784%2F12_-_006_-_Automated_Debugging_17.1748559783816.png)
 
 ## Benefits 好处
 

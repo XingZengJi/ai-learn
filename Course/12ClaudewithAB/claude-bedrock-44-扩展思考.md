@@ -10,6 +10,8 @@ Extended thinking is Claude's advanced feature that gives the model time to reas
 
 > 扩展思考(Extended thinking)是 Claude 的一项高级功能: 在生成最终回答之前,先给模型一段时间去推理复杂问题。你可以把它理解为 Claude 的内心独白——你能看到它是如何一步步处理你的问题的。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559587%2F10_-_001_-_Extended_Thinking_01.1748559587414.png)
+
 ## How Extended Thinking Works 扩展思考的运作方式
 
 When you enable extended thinking, Claude's response includes two parts instead of one:
@@ -18,6 +20,8 @@ When you enable extended thinking, Claude's response includes two parts instead 
 
 1. **Reasoning Content Part** 推理内容部分 - Claude's internal thinking process. Claude 的内部思考过程。
 2. **Text Part** 文本部分 - The final response you actually wanted. 你真正想要的最终回答。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559588%2F10_-_001_-_Extended_Thinking_03.1748559587928.png)
 
 The reasoning content shows you exactly how Claude breaks down your problem, what it considers, and how it arrives at its final answer. This transparency can be incredibly valuable for understanding and debugging complex tasks.
 
@@ -45,6 +49,8 @@ One important detail you'll notice immediately is the cryptographic signature at
 
 > 有个细节你一眼就会注意到: 推理内容上附带了一个加密签名。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559588%2F10_-_001_-_Extended_Thinking_04.1748559588322.png)
+
 This signature ensures you can't modify the thinking text. If you want to include Claude's previous reasoning in a follow-up conversation, the signature verifies the content hasn't been tampered with. This prevents potential safety issues from modified reasoning text.
 
 > 这个签名保证了思考文本不能被你改动。如果你想在后续对话中带上 Claude 之前的推理内容,签名会验证这段内容没有被篡改过。这样可以避免被修改的推理文本带来的潜在安全问题。
@@ -54,6 +60,8 @@ This signature ensures you can't modify the thinking text. If you want to includ
 Sometimes Claude's thinking gets flagged by safety systems. When this happens, you'll receive a `redactedContent` field instead of readable thinking text:
 
 > 有时候 Claude 的思考内容会被安全系统标记。这种情况下,你拿到的不是可读的思考文本,而是一个 `redactedContent` 字段。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559589%2F10_-_001_-_Extended_Thinking_06.1748559588844.png)
 
 The redacted content is encrypted but still functional - you can pass it back to Claude in future conversations without losing context. It's just not readable to you as a developer.
 

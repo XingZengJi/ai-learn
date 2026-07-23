@@ -10,6 +10,8 @@ Contextual retrieval is a technique that improves RAG pipeline accuracy by solvi
 
 > 上下文检索(contextual retrieval)是一种提升 RAG 流水线准确率的技术,它解决的是一个根本问题: 当你把文档切成块之后,每个块都失去了与整份文档大语境之间的联系。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559588%2F09_-_009_-_Contextual_Retrieval_00.1748559588379.png)
+
 The basic idea is simple. After chunking your source document, you ask Claude to add context to each chunk before storing it in your retriever database. This pre-processing step helps "situate" each chunk within the larger document.
 
 > 基本思路很简单: 把源文档切块之后,先让 Claude 给每个块补上一段上下文说明,再存进检索数据库。这个预处理步骤能帮每个块在整份文档里「定位」自己。
@@ -45,6 +47,8 @@ Claude might generate context like: "This section is from a larger report about 
 
 > Claude 可能会生成这样的上下文:「本节出自一份关于跨学科团队的大型报告。其中提到了 INC-2023-04-011,该编号在『网络安全分析』一节中也有出现。」
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559589%2F09_-_009_-_Contextual_Retrieval_04.1748559589111.png)
+
 You then combine this generated context with the original chunk text to create a "contextualized chunk" that gets stored in your vector and BM25 indexes.
 
 > 然后你把这段生成的上下文和原始块文本拼在一起,形成一个「带上下文的块」,再存进向量索引和 BM25 索引。
@@ -54,6 +58,8 @@ You then combine this generated context with the original chunk text to create a
 If your source document is too large to fit in a single prompt, you can provide a reduced set of context instead of the entire document.
 
 > 如果源文档太大,一条提示词装不下,你可以只提供一个缩减版的上下文,而不是整份文档。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559589%2F09_-_009_-_Contextual_Retrieval_08.1748559589486.png)
 
 For any given chunk you're contextualizing, include:
 

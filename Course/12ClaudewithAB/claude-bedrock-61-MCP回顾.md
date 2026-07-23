@@ -8,11 +8,15 @@
 
 MCP 服务器做完了,来回顾三个核心原语(primitives),搞清楚各自该在什么时候用。关键洞察是: **每个原语由技术栈中的不同角色控制**。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559732%2F11_-_011_-_MCP_Review_00.1748559732788.png)
+
 ## Tools: Model-Controlled 工具: 模型控制
 
 工具完全由 Claude 控制。模型自己决定何时调用这些函数,结果也直接由 Claude 拿去完成任务。
 
 当你想给 Claude **增加能力**时用工具。比如你让 Claude 用 JavaScript 算 3 的平方根,它会自动决定调用一个 JavaScript 执行工具来给出答案。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559734%2F11_-_011_-_MCP_Review_17.1748559733993.png)
 
 这个「要用工具」的决定是 100% 由模型作出的——Claude 自己意识到需要执行代码,并挑了合适的工具,应用和用户都没有干预。
 

@@ -12,7 +12,11 @@ Claude Code 内置了一个 MCP 客户端,这意味着你可以接入 MCP 服务
 
 MCP 让 Claude Code 能通过 MCP 服务器连接外部服务。每个服务器都可以提供工具、提示词和资源,扩展 Claude 能做的事。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559780%2F12_-_004_-_Enhancements_with_MCP_Servers_01.1748559780029.png)
+
 本例中我们把 Claude Code 接到一个自定义 MCP 服务器上,它提供文档转换工具,让 Claude 能读取 PDF 和 Word 文档并转成 markdown。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559780%2F12_-_004_-_Enhancements_with_MCP_Servers_02.1748559780526.png)
 
 ## Adding an MCP Server to Claude Code 添加 MCP 服务器
 
@@ -31,6 +35,8 @@ claude mcp add documents uv run main.py
 
 连接成功后,Claude 就能使用该服务器提供的工具。在这个例子里,你可以让 Claude 把文档转成 markdown,它会自动调用我们做的那个文档转换工具。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559781%2F12_-_004_-_Enhancements_with_MCP_Servers_13.1748559780991.png)
+
 ## Popular MCP Servers for Development 开发常用的 MCP 服务器
 
 已有不少现成的 MCP 服务器可以增强开发工作流:
@@ -43,6 +49,8 @@ claude mcp add documents uv run main.py
 | `mcp-atlassian` | 让 Claude 能访问 Confluence 和 Jira |
 | `firecrawl-mcp-server` | 给 Claude 加上网页抓取能力 |
 | `slack-mcp` | 让 Claude 能发消息或回复指定话题串 |
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559781%2F12_-_004_-_Enhancements_with_MCP_Servers_16.1748559781522.png)
 
 ## Building Your Custom Workflow 组合出自己的工作流
 

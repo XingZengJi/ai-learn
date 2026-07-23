@@ -40,9 +40,13 @@ async def get_prompt(self, prompt_name, args: dict[str, str]):
 4. Claude 用可用工具去取文档内容
 5. Claude 返回重排后的结果
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559732%2F11_-_010_-_Prompts_in_the_Client_10.1748559731797.png)
+
 ## How Prompts Work 提示词的运作方式
 
 提示词定义的是一组可供客户端使用的 user 与 assistant 消息。这些提示词应当质量过硬、经过充分测试,并且与你 MCP 服务器的整体用途相关。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559732%2F11_-_010_-_Prompts_in_the_Client_17.1748559732285.png)
 
 完整工作流:
 

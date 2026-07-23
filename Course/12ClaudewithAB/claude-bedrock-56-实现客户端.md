@@ -12,16 +12,22 @@ MCP 服务器跑通之后,该做客户端这一侧了。客户端是让你的应
 
 再强调一次: 正常情况下你只会实现 MCP 客户端或服务器中的一个。本项目两个都做,只是为了让你看清它们如何配合。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559696%2F11_-_006_-_Implementing_a_Client_01.1748559696012.png)
+
 MCP 客户端由两部分协同组成:
 
 - **MCP Client** —— 我们自己写的一个类,用来更方便地使用会话
 - **Client Session** —— 与服务器的实际连接(属于 MCP Python SDK)
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559696%2F11_-_006_-_Implementing_a_Client_02.1748559696435.png)
 
 会话(session)负责底层通信,但程序退出时需要小心地清理资源。所以我们用自己的类把它包一层,自动管理清理工作。
 
 ## How the Client Fits Into Our Application 客户端在应用中的位置
 
 CLI 代码在两个关键时刻用到客户端:
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559697%2F11_-_006_-_Implementing_a_Client_05.1748559696986.png)
 
 - 取一份可用工具清单发给 Claude
 - 在 Claude 请求调用工具时执行工具

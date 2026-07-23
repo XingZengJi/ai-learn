@@ -12,6 +12,8 @@ Claude 的 Computer Use 和普通的工具使用**完全是同一套机制**,建
 
 先快速复习标准工具使用的流程。你发给 Claude 的请求里同时包含用户消息和工具 schema,后者描述了你想开放给 Claude 的额外功能。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559834%2F12_-_008_-_How_Computer_Use_Works_01.1748559834652.png)
+
 典型流程:
 
 1. 你把问题连同可用的工具 schema 一起发给 Claude
@@ -20,11 +22,17 @@ Claude 的 Computer Use 和普通的工具使用**完全是同一套机制**,建
 4. 你的服务器执行该工具函数并拿到结果
 5. 你把工具结果发回给 Claude
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559835%2F12_-_008_-_How_Computer_Use_Works_05.1748559835205.png)
+
 比如问旧金山的天气,Claude 可能调用 `get_weather` 函数并传入地点参数,你的服务器去取天气数据,再把结果返回给 Claude。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559835%2F12_-_008_-_How_Computer_Use_Works_07.1748559835689.png)
 
 ## Computer Use: Same Flow, Different Tool 同样的流程,不同的工具
 
 Computer Use 走的正是这套流程,区别只在于「工具」实际做的事——不是取天气数据,而是模拟鼠标点击、键盘输入之类的电脑操作。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559837%2F12_-_008_-_How_Computer_Use_Works_08.1748559836893.png)
 
 启用 Computer Use 时,你发给 Claude 的是一个特殊的工具 schema,它会在后台**自动展开**。你这边写的是一个简单 schema,展开后变成一份完整的接口说明,告诉 Claude 它可以执行这些动作:
 
@@ -33,7 +41,11 @@ Computer Use 走的正是这套流程,区别只在于「工具」实际做的事
 - 截屏
 - 滚动及其他界面交互
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559837%2F12_-_008_-_How_Computer_Use_Works_09.1748559837358.png)
+
 你发出去的 schema 很精简,但它会自动转换成包含全部电脑交互能力的详细规格。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559838%2F12_-_008_-_How_Computer_Use_Works_10.1748559837858.png)
 
 ## The Technical Implementation 技术实现
 
@@ -47,6 +59,8 @@ Computer Use 走的正是这套流程,区别只在于「工具」实际做的事
 
 这套基础设施不用你从零搭,Anthropic 提供了参考实现,把复杂的部分都处理好了。
 
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559838%2F12_-_008_-_How_Computer_Use_Works_15.1748559838343.png)
+
 配置 Computer Use 需要:
 
 - 系统里装好 Docker 运行时
@@ -54,5 +68,7 @@ Computer Use 走的正是这套流程,区别只在于「工具」实际做的事
 - Anthropic quickstarts 仓库里的参考实现
 
 准备就绪后,一条命令就能启动 Docker 容器,得到演示里那样的界面: 左边是聊天界面,你在这里跟 Claude 对话; 右边是浏览器环境,Claude 在这里操作网页和应用。配置过程很直接,完整指南在 GitHub 上的 Anthropic quickstarts 仓库里。这份参考实现提供了你在安全、隔离的环境中开始实验所需的一切。
+
+![课程配图](https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2Fa46l9irobhg0f5webscixp0bs%2Fpublic%2F1748559839%2F12_-_008_-_How_Computer_Use_Works_19.1748559838860.png)
 
 对产品经理来说: 「Claude 并不是在直接控制电脑」这句话值得记住。它发出的只是「点击坐标 (300, 450)」这样的请求,真正执行的是你自己的基础设施。这个区分在讨论安全边界时很关键——**能力上限是由你的执行层决定的**,你不给它实现某个动作,它就做不到。控制权始终在你这边。
