@@ -92,7 +92,13 @@
     { "id": "k1501", "course": "c15", "name": "Vertex AI 上的 Claude" },
     { "id": "k1601", "course": "c16", "name": "AI 素养：教育者版" },
     { "id": "k1701", "course": "c17", "name": "AI 素养：学生版" },
-    { "id": "k1801", "course": "c18", "name": "教授 AI 素养" },
+    { "id": "k1801", "course": "c18", "name": "四种教学路径与框架的双重性质" },
+    { "id": "k1802", "course": "c18", "name": "委派–审慎环：战略与伦理决策" },
+    { "id": "k1803", "course": "c18", "name": "描述–辨别环：搭建认知环境" },
+    { "id": "k1804", "course": "c18", "name": "评估 4D：结果、过程、反思" },
+    { "id": "k1805", "course": "c18", "name": "为 AI 素养设计作业" },
+    { "id": "k1806", "course": "c18", "name": "AI 对学科的冲击分析" },
+    { "id": "k1807", "course": "c18", "name": "把学科专长应用于 4D" },
     { "id": "k1901", "course": "c19", "name": "AI 素养：公益版" },
     { "id": "k2001", "course": "c20", "name": "AI 素养：小微企业版" }
   ]
