@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `学习计划.md` — 学习计划权威文档：20 门课速览、10 周安排、工程基础加油包、进度追踪表
 - `docs/` — 「CC 学习成就地图」网页（GitHub Pages 站点，https://xingzengji.github.io/ai-learn/）
-- `Course/<课程名>/` — 课程笔记（中英对照/中文翻译），按 `claude-101-N-标题.md` 编号
+- `Course/<课程名>/` — 课程笔记（中英对照/中文翻译）。**每个课程各自一套编号前缀**，由该文件夹第一课确定后续沿用，不是全仓库统一格式，例如：`Claude101/claude-101-N-标题.md`、`ClaudeCode101/claude-code-101-N-标题.md`、`ClaudeApi/claude-api-N-标题.md`、`11MCP/mcp-N-标题.md`、`12ClaudewithAB/claude-bedrock-N-标题.md`、`Fluency/ai-fluency-educators-N-标题.md`、`FluencyforStu/ai-fluency-students-N-标题.md`。新建课程文件夹时先看有没有更贴近的现成前缀可沿用，没有再另起一个
 - `notes/` — 学习笔记（费曼输出法）
 - `practice/` — 实践产出
 
