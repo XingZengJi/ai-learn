@@ -37,8 +37,8 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-no
 
 本仓库已有的同系列课程:
 
-- `Course/Fluency/` —— AI Fluency for Educators(教育者版)
-- `Course/FluencyforStu/` —— AI Fluency for Students(学生版)
+- `Course/09FluforEdu/` —— AI Fluency for Educators(教育者版)
+- `Course/10FluforStu/` —— AI Fluency for Students(学生版)
 - `Course/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
 - `Course/15AIFAIfornon/`(本课)—— 公益组织版
 

@@ -98,8 +98,8 @@ Anthropic Academy 官方**学习路径** <https://anthropic.skilljar.com/path/ai
 
 本仓库同系列课程:
 
-- `Course/Fluency/` —— **教育者版(通用)**
-- `Course/FluencyforStu/` —— 学生版
+- `Course/09FluforEdu/` —— **教育者版(通用)**
+- `Course/10FluforStu/` —— 学生版
 - `Course/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
 - `Course/15AIFAIfornon/` —— 公益组织版
 - `Course/19AIF4SB/` —— 小微企业版

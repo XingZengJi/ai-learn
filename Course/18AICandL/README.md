@@ -76,7 +76,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-capabilities-a
 
 ## 与其他课程的关系
 
-- `Course/Fluency/` 等 AI Fluency 系列(**c06** 为 Framework & Foundations)—— 讲**人的能力**(4D);本课讲**机器的属性**。课程明确说两者是**同一系统的两面**,并建议把 c06 作为自然的下一步
+- `Course/09FluforEdu/` 等 AI Fluency 系列(**c06** 为 Framework & Foundations)—— 讲**人的能力**(4D);本课讲**机器的属性**。课程明确说两者是**同一系统的两面**,并建议把 c06 作为自然的下一步
 - 本课第 07 讲的嵌入与相似度检索,与 `Course/12ClaudewithAB/`、`Course/13ClaudeonGC/` 里的 RAG 章节可以对照阅读
 
 ## 许可

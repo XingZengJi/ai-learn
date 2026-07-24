@@ -24,11 +24,11 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/teaching-ai-fluen
 
 Anthropic 的 AI Fluency 系列目前在本仓库有三门:
 
-- `Course/Fluency/` —— **AI Fluency for Educators**: 教育者**自己**如何用 4D 框架改进教学工作
-- `Course/FluencyforStu/` —— **AI Fluency for Students**: 面向学生的 4D 框架
+- `Course/09FluforEdu/` —— **AI Fluency for Educators**: 教育者**自己**如何用 4D 框架改进教学工作
+- `Course/10FluforStu/` —— **AI Fluency for Students**: 面向学生的 4D 框架
 - `Course/14T-AIFluency/`(本课)—— **Teaching AI Fluency**: 教育者如何**把 4D 框架教给别人**
 
-本课默认你已经熟悉 4D(委派 Delegation / 描述 Description / 辨别 Discernment / 审慎 Diligence),不再复述框架本身,重点全在「怎么教、怎么评」。建议先看 `Fluency/`。
+本课默认你已经熟悉 4D(委派 Delegation / 描述 Description / 辨别 Discernment / 审慎 Diligence),不再复述框架本身,重点全在「怎么教、怎么评」。建议先看 `09FluforEdu/`。
 
 ## 内容结构
 
