@@ -14,7 +14,7 @@
 
 ## 课程定位
 
-这门课的受众不是「刚接触 4D 框架的人」,而是**已经在用 AI 流畅度框架、现在要把它教给别人的教育者**。前置课程是 `Course/Fluency/`(AI Fluency for Educators)和 `Course/FluencyforStu/`。这门课默认你已经熟悉 4D,重点转向「怎么教」。
+这门课的受众不是「刚接触 4D 框架的人」,而是**已经在用 AI 流畅度框架、现在要把它教给别人的教育者**。前置课程是 `Course/09FluforEdu/`(AI Fluency for Educators)和 `Course/10FluforStu/`。这门课默认你已经熟悉 4D,重点转向「怎么教」。
 
 ## 框架的双重性质 A Descriptive Model and a Normative Guide
 

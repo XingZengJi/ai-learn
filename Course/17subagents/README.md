@@ -43,4 +43,4 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/introduction-to-s
 ## 与相邻课程的关系
 
 - `Course/16AgentSkills/`(**c04**)—— Skills 与子智能体是**互补而非替代**: Skills 给当前对话加知识,子智能体在隔离上下文里干活。特别注意 16 课第 5 讲提到的坑——**子智能体不会自动继承 Skills**,必须在 agent 的 `skills` 字段里显式列出;内置智能体(Explore、Plan)则完全用不了 Skills
-- `Course/ClaudeCode101/`(**c02**)—— 子智能体是 Claude Code 定制体系的一环,另有 CLAUDE.md、Hooks、MCP
+- `Course/02ClaudeCode101/`(**c02**)—— 子智能体是 Claude Code 定制体系的一环,另有 CLAUDE.md、Hooks、MCP
