@@ -6,6 +6,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-no
 - 站点共 10 个条目 = 9 节正课 + 1 个结业测验(Course Quiz,不收录)
 - 本课程为**视频 + 文字练习**形式,页面上没有配图,故笔记中无图片链接
 - 英文原文抓取件在 `_source/`,已 gitignore,仅本地留存供核对
+- 对应成就地图课程 ID: **`c19`**
 
 ## 课次一览
 
