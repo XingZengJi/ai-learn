@@ -100,6 +100,8 @@
     { "id": "k1806", "course": "c18", "name": "AI 对学科的冲击分析" },
     { "id": "k1807", "course": "c18", "name": "把学科专长应用于 4D" },
     { "id": "k1901", "course": "c19", "name": "AI 素养：公益版" },
-    { "id": "k2001", "course": "c20", "name": "AI 素养：小微企业版" }
+    { "id": "k2001", "course": "c20", "name": "AI 素养：小微企业版" },
+    { "id": "k2101", "course": "c21", "name": "AI 素养：建造者版" },
+    { "id": "k2201", "course": "c22", "name": "AI 素养：pK–12 教育者版" }
   ]
 }

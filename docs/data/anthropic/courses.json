@@ -5,7 +5,7 @@
     "3": { "name": "按需选修", "colorHex": "#c98500" }
   },
   "layout": {
-    "viewBox": [1200, 980],
+    "viewBox": [1200, 1060],
     "regions": [
       { "tier": 1, "y": 56, "label": "第一天区 · 使用与协作" },
       { "tier": 2, "y": 480, "label": "第二天区 · 工程与开发" },
@@ -14,7 +14,7 @@
     "slots": {
       "1": [[180, 150], [530, 140], [890, 150], [190, 330], [540, 320], [900, 330]],
       "2": [[190, 575], [520, 560], [850, 575], [350, 675], [730, 670]],
-      "3": [[140, 845], [375, 845], [610, 845], [845, 845], [1080, 845], [255, 925], [490, 925], [725, 925], [960, 925]]
+      "3": [[140, 845], [375, 845], [610, 845], [845, 845], [1080, 845], [255, 925], [490, 925], [725, 925], [960, 925], [375, 1005], [845, 1005]]
     }
   },
   "courses": [
@@ -37,6 +37,8 @@
     { "id": "c17", "order": 17, "en": "AI Fluency for Students", "cn": "学生的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-students", "summary": "AI 素养学生定制版", "prereq": ["c06"] },
     { "id": "c18", "order": 18, "en": "Teaching AI Fluency", "cn": "如何教授 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/teaching-ai-fluency", "summary": "在课堂上讲授 AI 素养", "prereq": ["c06"] },
     { "id": "c19", "order": 19, "en": "AI Fluency for Nonprofits", "cn": "非营利组织的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-nonprofits", "summary": "AI 素养公益组织定制版", "prereq": ["c06"] },
-    { "id": "c20", "order": 20, "en": "AI Fluency for Small Businesses", "cn": "小微企业的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-small-businesses", "summary": "AI 素养小企业定制版", "prereq": ["c06"] }
+    { "id": "c20", "order": 20, "en": "AI Fluency for Small Businesses", "cn": "小微企业的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-small-businesses", "summary": "AI 素养小企业定制版", "prereq": ["c06"] },
+    { "id": "c21", "order": 21, "en": "AI Fluency for Builders", "cn": "建造者的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/ai-fluency-for-builders", "summary": "AI 素养建造者版：诊所项目贯穿全程", "prereq": ["c06"] },
+    { "id": "c22", "order": 22, "en": "AI Fluency for pK–12 Educators", "cn": "pK–12 教育者的 AI 素养", "tier": 3, "url": "https://anthropic.skilljar.com/path/ai-fluency-for-pk-12-educators", "summary": "AI 素养 pK–12 版 + 培训者工具包", "prereq": ["c06"] }
   ]
 }
