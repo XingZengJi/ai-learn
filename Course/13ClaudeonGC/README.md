@@ -6,6 +6,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/claude-with-googl
 - 站点共 93 个条目 = 82 个视频课 + 1 个模块课(Vertex AI Setup)+ 10 个 quiz。**quiz 不收录**
 - 每篇含课程正文中文翻译 + 原课程配图的远程链接(图片托管在 S3,无签名、不过期)
 - 英文原文抓取件在 `_source/`,已 gitignore,仅本地留存供核对
+- 对应成就地图课程 ID: **`c15`**
 
 ## 未收录的课次
 

@@ -6,6 +6,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/teaching-ai-fluen
 - 站点共 8 个条目 = 7 节正课 + 1 个结业证书页(内容为最终测验,不收录)
 - 本课程为**纯视频课**,页面上没有配图,故笔记中无图片链接
 - 英文原文抓取件在 `_source/`,已 gitignore,仅本地留存供核对
+- 对应成就地图课程 ID: **`c18`**
 
 ## 课次一览
 
