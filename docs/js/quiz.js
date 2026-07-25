@@ -184,6 +184,7 @@
     if (!nWrong) {
       const alreadyDone = ctx.state.statusOf("knowledge", ctx.k.id) === "done";
       if (!alreadyDone) ctx.onPass(); /* 记录通过 + 预览点亮 + 重绘星图 */
+      celebrate();
       box.innerHTML =
         '<div class="kq-star" style="color:' + ctx.color + '">✦</div>' +
         '<h2 id="k-modal-title">' + total + " 题全对，通过！</h2>" +
@@ -216,6 +217,29 @@
       box.appendChild(back);
     }
     panel.appendChild(box);
+  }
+
+  /* ---------- 全对撒花 ---------- */
+  function celebrate() {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const EMOJI = ["🌸", "🌺", "✿", "❀", "🌼", "🌷"];
+    const layer = document.createElement("div");
+    layer.className = "petal-shower";
+    const n = 40;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement("span");
+      p.className = "petal";
+      p.textContent = EMOJI[Math.floor(Math.random() * EMOJI.length)];
+      p.style.left = (Math.random() * 100) + "vw";
+      p.style.fontSize = (14 + Math.random() * 16) + "px";
+      p.style.animationDuration = (2 + Math.random() * 1.8) + "s";
+      p.style.animationDelay = (Math.random() * 0.7) + "s";
+      p.style.setProperty("--drift", ((Math.random() * 2 - 1) * 70) + "px");
+      p.style.setProperty("--rot", ((Math.random() * 2 - 1) * 380) + "deg");
+      layer.appendChild(p);
+    }
+    document.body.appendChild(layer);
+    setTimeout(() => layer.remove(), 4200);
   }
 
   window.Quiz = { open: open };
