@@ -194,11 +194,13 @@
   function renderProjects() {
     const track = document.getElementById("projects-track");
     track.textContent = "";
-    const sizes = [48, 58, 68, 80, 96];
+    /* 行星按顺序由小变大，尺寸随项目数摊开——别写死数组，加项目时后面几颗会全塌成同一个大小 */
+    const n = state.data.projects.length;
     state.data.projects.forEach((p, i) => {
       const st = state.statusOf("projects", p.id);
-      const size = sizes[i] || 68;
-      const color = tierColor([1, 1, 2, 2, 3][i] || 3);
+      const size = n < 2 ? 96 : Math.round(48 + (i * 48) / (n - 1));
+      /* 梯队色优先取 projects.json 的 tier；没有这字段时按位置三等分（n=5 时等价于旧的 [1,1,2,2,3]） */
+      const color = tierColor(p.tier || Math.min(3, Math.floor((i * 3) / n) + 1));
 
       const card = document.createElement("article");
       card.className = "project-card";

@@ -65,6 +65,18 @@ async function makePage(provider) {
   check("列表渲染出 " + nCourses + " 门课程分组",
     document.querySelectorAll("#list-root details.course-k").length === nCourses);
   check("统计行课程数动态化", document.getElementById("stat-courses").textContent.includes("/ " + nCourses + " 门课"));
+  /* 项目数也从数据推导。行星尺寸曾是写死的 5 元素数组，加到第 6 个起会全塌成同一大小——这里盯住它 */
+  const projects = readJSON("data/anthropic/projects.json").projects;
+  const cards = document.querySelectorAll("#projects-track .project-card");
+  check("项目视图渲染出 " + projects.length + " 颗行星", cards.length === projects.length);
+  const radii = Array.from(cards).map(c => +c.querySelector("circle").getAttribute("r"));
+  check("行星半径逐颗递增，没有塌成同一尺寸（" + radii.join("/") + "）",
+    radii.every((r, i) => i === 0 || r > radii[i - 1]));
+  const t1Hex = readJSON("data/anthropic/courses.json").tiers["1"].colorHex;
+  check("已达成的行星按 tier 上色（p1 → tier1）",
+    cards[0].querySelector("circle").getAttribute("fill") === t1Hex);
+  check("每个项目的 covers 都指向存在的知识点",
+    projects.every(p => p.covers.every(kid => knowledge.some(k => k.id === kid))));
   check("切换按钮文案为「⇄ OpenAI 课程」", document.getElementById("switch-provider").textContent === "⇄ OpenAI 课程");
   check("大标题为「CC 学习成就地图」", document.getElementById("site-title").textContent === "CC 学习成就地图");
 
@@ -165,7 +177,9 @@ async function makePage(provider) {
   const oStars = doc2.querySelectorAll("#starmap .star");
   check("星数 = openai knowledge 条数（" + oStars.length + " / 应为 " + oKnowledge.length + "）", oStars.length === oKnowledge.length);
   check("统计行为 3 门课", doc2.getElementById("stat-courses").textContent.includes("/ 3 门课"));
-  check("项目视图有 5 个草稿", doc2.querySelectorAll("#projects-track .project-card").length === 5);
+  const oProjects = readJSON("data/openai/projects.json").projects;
+  check("项目视图渲染出 " + oProjects.length + " 颗行星（openai）",
+    doc2.querySelectorAll("#projects-track .project-card").length === oProjects.length);
   check("切换按钮指向 Anthropic", doc2.getElementById("switch-provider").textContent.includes("Anthropic"));
   check("页脚课程链接指向 OpenAI Academy", doc2.getElementById("source-link").href.includes("academy.openai.com"));
   check("学习计划链接隐藏", doc2.getElementById("plan-link-wrap").hidden === true);
