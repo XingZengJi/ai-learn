@@ -1,7 +1,7 @@
 /* 成就地图端到端冒烟测试（无需浏览器，用 jsdom 模拟）。
  * 改了 docs/ 下的 JS/HTML 之后跑；只补 quiz.json 数据的话跑 check-data.py 即可。
  * 用法：cd tools && npm install && node e2e.js
- * 覆盖：Anthropic 全流程（渲染→点星→测验答错重试→全对预览点亮→无题库直点→Esc/清除预览）
+ * 覆盖：Anthropic 全流程（渲染→点星→测验答错重试→全对预览点亮→有题必考无绕过→Esc/清除预览）
  *      + OpenAI 实例（主题标记、星数、概要展示、直接预览点亮、localStorage 键隔离、切换按钮）。
  */
 const { JSDOM, VirtualConsole } = require("jsdom");
@@ -60,8 +60,11 @@ async function makePage(provider) {
   check("默认厂商为 anthropic", document.body.dataset.provider === "anthropic");
   const stars = document.querySelectorAll("#starmap .star");
   check("星图星数 = knowledge.json 条数（" + stars.length + "）", stars.length === knowledge.length);
-  check("列表渲染出 20 门课程分组", document.querySelectorAll("#list-root details.course-k").length === 20);
-  check("统计行课程数动态化", document.getElementById("stat-courses").textContent.includes("/ 20 门课"));
+  /* 课程数从 courses.json 推导，别写死——加课时不该让测试失效 */
+  const nCourses = readJSON("data/anthropic/courses.json").courses.length;
+  check("列表渲染出 " + nCourses + " 门课程分组",
+    document.querySelectorAll("#list-root details.course-k").length === nCourses);
+  check("统计行课程数动态化", document.getElementById("stat-courses").textContent.includes("/ " + nCourses + " 门课"));
   check("切换按钮文案为「⇄ OpenAI 课程」", document.getElementById("switch-provider").textContent === "⇄ OpenAI 课程");
   check("大标题为「CC 学习成就地图」", document.getElementById("site-title").textContent === "CC 学习成就地图");
 
@@ -115,14 +118,20 @@ async function makePage(provider) {
   check("按钮变「重新测验」", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("重新测验")));
   modal.querySelector(".k-modal-close").click();
 
-  console.log("— Anthropic · 无题库知识点（k0201）：直接预览点亮 —");
+  /* Anthropic 侧已无「题库为空」的知识点（175 个全部有题），所以这里改为反向断言：
+     有题必考——任何知识点都不该出现「直接预览点亮」的绕过入口。
+     空题库那条路径由下面的 OpenAI 段落覆盖（其 quiz.json 目前全为空）。 */
+  console.log("— Anthropic · 有题必考：无直接点亮入口 —");
+  const aQuiz = readJSON("data/anthropic/quiz.json");
+  const emptyA = Object.keys(aQuiz).filter(k => !k.startsWith("_") && !aQuiz[k].questions.length);
+  check("所有知识点都有题（无题库知识点：" + (emptyA.length || "无") + "）", emptyA.length === 0);
   [...document.querySelectorAll("#list-root .k-item")]
     .find(b => b.textContent.includes("Claude Code 是什么")).click();
-  check("显示占位文案", modal.textContent.includes("学到这门课时补充"));
-  const directBtn = [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("直接预览点亮"));
-  check("有「直接预览点亮」按钮", !!directBtn);
-  directBtn.click();
-  check("直接预览点亮生效", JSON.parse(win.localStorage.getItem("cc-map-preview"))["knowledge:k0201"] === true);
+  check("有「开始测验」按钮", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("测验（")));
+  check("无「直接预览点亮」绕过入口",
+    ![...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接预览点亮")));
+  check("未答题则不写入预览", JSON.parse(win.localStorage.getItem("cc-map-preview"))["knowledge:k0201"] === undefined);
+  modal.querySelector(".k-modal-close").click();
 
   console.log("— Anthropic · Esc 关闭 & 清除预览 —");
   document.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape" }));
