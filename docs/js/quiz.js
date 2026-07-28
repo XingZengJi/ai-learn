@@ -7,6 +7,7 @@
   let modal, panel, closeBtn;
   let ctx = null; /* 每次 open 由 app.js 注入：{ k, course, color, quiz, state, passedDate, onPass, onTogglePreview } */
   let run = null; /* 一次测验的进行状态：{ idx, wrong[], order[][] } */
+  let pendingCelebrate = null; /* 刚测验通过的知识点 id，等弹窗关闭后在那颗星周围撒花 */
 
   function init() {
     modal = document.getElementById("k-modal");
@@ -34,6 +35,8 @@
     document.body.style.overflow = "";
     ctx = null;
     run = null; /* 中途关闭不计成绩 */
+    /* 弹窗关掉、星星露出来之后才撒花——否则纸屑全被弹窗盖住 */
+    if (pendingCelebrate) { const kid = pendingCelebrate; pendingCelebrate = null; celebrateAtStar(kid); }
   }
 
   /* ---------- 详情视图 ---------- */
@@ -184,7 +187,7 @@
     if (!nWrong) {
       const alreadyDone = ctx.state.statusOf("knowledge", ctx.k.id) === "done";
       if (!alreadyDone) ctx.onPass(); /* 记录通过 + 预览点亮 + 重绘星图 */
-      celebrate();
+      pendingCelebrate = ctx.k.id; /* 关闭弹窗那一刻，在这颗星周围撒花 */
       box.innerHTML =
         '<div class="kq-star" style="color:' + ctx.color + '">✦</div>' +
         '<h2 id="k-modal-title">' + total + " 题全对，通过！</h2>" +
@@ -219,27 +222,62 @@
     panel.appendChild(box);
   }
 
-  /* ---------- 全对撒花 ---------- */
-  function celebrate() {
+  /* ---------- 全对撒花：只在被点亮的那颗星周围小范围炸开 ---------- */
+  const CONFETTI_COLORS = ["#ff5c8a", "#ffd166", "#5fe0a8", "#4cc9f0", "#b98cff", "#ff9f4d", "#fff3b0"];
+
+  function celebrateAtStar(kid) {
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const EMOJI = ["🌸", "🌺", "✿", "❀", "🌼", "🌷"];
+    /* 知识点 id 恒为 k+4 位数字（check-data.py 校验），可直接拼进选择器，无需 CSS.escape */
+    const star = document.querySelector('#starmap .star[data-k="' + kid + '"]');
+    if (!star) return;
+    /* 星图现在很高，这颗星可能在视野外——先滚进来，等滚动停下再撒 */
+    const box = star.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    if ((box.top < 80 || box.bottom > vh - 60) && typeof star.scrollIntoView === "function") {
+      star.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => burst(star), 520);
+    } else {
+      burst(star);
+    }
+  }
+
+  function burst(star) {
+    const box = star.getBoundingClientRect();
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 2;
     const layer = document.createElement("div");
-    layer.className = "petal-shower";
-    const n = 40;
+    layer.className = "confetti-burst";
+
+    /* 一圈扩散的光晕，标记「就是这颗亮了」 */
+    const ring = document.createElement("span");
+    ring.className = "confetti-ring";
+    ring.style.left = cx + "px";
+    ring.style.top = cy + "px";
+    layer.appendChild(ring);
+
+    const n = 26;
     for (let i = 0; i < n; i++) {
-      const p = document.createElement("span");
-      p.className = "petal";
-      p.textContent = EMOJI[Math.floor(Math.random() * EMOJI.length)];
-      p.style.left = (Math.random() * 100) + "vw";
-      p.style.fontSize = (14 + Math.random() * 16) + "px";
-      p.style.animationDuration = (2 + Math.random() * 1.8) + "s";
-      p.style.animationDelay = (Math.random() * 0.7) + "s";
-      p.style.setProperty("--drift", ((Math.random() * 2 - 1) * 70) + "px");
-      p.style.setProperty("--rot", ((Math.random() * 2 - 1) * 380) + "deg");
-      layer.appendChild(p);
+      const bit = document.createElement("span");
+      bit.className = "confetti-bit";
+      /* 均匀铺满一圈再加抖动，避免出现明显的空档 */
+      const angle = (i / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
+      const dist = 46 + Math.random() * 74; /* 小范围：46–120px */
+      bit.style.left = cx + "px";
+      bit.style.top = cy + "px";
+      bit.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+      /* +18 让尾段略微下沉，像纸屑受重力 */
+      bit.style.setProperty("--dy", (Math.sin(angle) * dist * 0.8 + 18) + "px");
+      bit.style.setProperty("--rot", ((Math.random() * 2 - 1) * 420) + "deg");
+      bit.style.setProperty("--c", CONFETTI_COLORS[i % CONFETTI_COLORS.length]);
+      bit.style.setProperty("--w", (4 + Math.random() * 4).toFixed(1) + "px");
+      bit.style.setProperty("--h", (7 + Math.random() * 5).toFixed(1) + "px");
+      bit.style.setProperty("--br", Math.random() < 0.35 ? "50%" : "1px"); /* 三成做成小圆点，混着纸条更热闹 */
+      bit.style.setProperty("--dur", (0.75 + Math.random() * 0.5).toFixed(2) + "s");
+      bit.style.setProperty("--delay", (Math.random() * 0.12).toFixed(2) + "s");
+      layer.appendChild(bit);
     }
     document.body.appendChild(layer);
-    setTimeout(() => layer.remove(), 4200);
+    setTimeout(() => layer.remove(), 1800);
   }
 
   window.Quiz = { open: open };

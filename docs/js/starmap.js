@@ -158,7 +158,8 @@
       stars.forEach((k, i) => {
         const [x, y] = starPos[k.id];
         const st = statuses[i];
-        const sg = el("g", { class: "star" + (st === "done" || st === "preview" ? " lit" : ""), tabindex: "0", role: "button" });
+        /* data-k 供测验通过后的撒花定位这颗星（见 quiz.js 的 celebrateAtStar） */
+        const sg = el("g", { class: "star" + (st === "done" || st === "preview" ? " lit" : ""), "data-k": k.id, tabindex: "0", role: "button" });
         sg.setAttribute("aria-label", k.name + "（" + ({ done: "已点亮", preview: "预览点亮", doing: "学习中", todo: "未点亮" })[st] + "）");
 
         if (st === "done") {

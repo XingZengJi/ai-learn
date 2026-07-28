@@ -108,8 +108,20 @@ async function makePage(provider) {
   check("预览点亮已写入（无后缀键）", preview["knowledge:k0101"] === true);
   check("预览横幅出现", !document.getElementById("preview-banner").hidden);
 
+  check("弹窗还开着时不撒花（否则纸屑被弹窗盖住）", !document.querySelector(".confetti-burst"));
   [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("完成")).click();
   check("点「完成」关闭弹窗", modal.hidden);
+
+  console.log("— Anthropic · 撒花：只在点亮的那颗星周围 —");
+  const burst = document.querySelector(".confetti-burst");
+  check("关闭弹窗后出现撒花层", !!burst);
+  check("纸屑数量克制（不铺满屏幕）", burst && burst.querySelectorAll(".confetti-bit").length === 26);
+  check("有一圈点亮光环", !!(burst && burst.querySelector(".confetti-ring")));
+  const litStar = document.querySelector('#starmap .star[data-k="k0101"]');
+  check("星图上能按 data-k 定位到这颗星", !!litStar);
+  const bit0 = burst && burst.querySelector(".confetti-bit");
+  check("纸屑定点在星星坐标上（而非 vw 满屏散布）",
+    !!bit0 && bit0.style.left.endsWith("px") && !!bit0.style.getPropertyValue("--dx"));
 
   console.log("— Anthropic · 重开详情：已通过态 —");
   [...document.querySelectorAll("#list-root .k-item")]

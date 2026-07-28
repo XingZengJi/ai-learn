@@ -336,21 +336,35 @@ details.course-k summary .list-row { border-bottom: none; }
 }
 .kq-result .kd-btn { margin: 0 6px; }
 
-.petal-shower { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
-.petal {
-  position: absolute; top: -8%; line-height: 1;
-  animation-name: petal-fall; animation-timing-function: ease-in; animation-fill-mode: forwards;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+/* 测验全对后的撒花：不铺满屏幕，只在刚点亮的那颗星周围迸发一小圈纸屑。
+   容器 fixed 铺满视口只为承载定位，纸屑本身用星星的视口坐标定点。 */
+.confetti-burst { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+.confetti-bit {
+  position: absolute; width: var(--w); height: var(--h);
+  background: var(--c); border-radius: var(--br);
+  opacity: 0;
+  animation: confetti-fly var(--dur) cubic-bezier(0.17, 0.7, 0.35, 1) var(--delay) forwards;
 }
-@keyframes petal-fall {
-  0%   { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-  8%   { opacity: 1; }
-  100% { transform: translate(var(--drift), 118vh) rotate(var(--rot)); opacity: 0; }
+@keyframes confetti-fly {
+  0%   { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 0; }
+  15%  { opacity: 1; }
+  65%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+/* 一圈扩散的光环，点出「亮的是这颗」 */
+.confetti-ring {
+  position: absolute; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  animation: confetti-ring 0.62s ease-out forwards;
+}
+@keyframes confetti-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(4.6); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .dust.tw, .star.lit circle.core, .constellation-halo, .kq-star { animation: none; }
-  .petal-shower { display: none; }
+  .confetti-burst { display: none; }
 }
 
 @media (max-width: 640px) {
