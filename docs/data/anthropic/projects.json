@@ -15,7 +15,7 @@
       "tier": 1,
       "level": "L1 · 会用",
       "name": "个人 AI 指挥台",
-      "desc": "挑一件你每周都得干的真事，把它从「每次重新说一遍」变成一个配置好、会自己跑的工位：Project 空间 + Research 调研 + Artifact 模板 + Cowork 定时任务 + 一份《我给 Claude 划的边界》",
+      "desc": "载体是行业/竞品动态周报：把它从「每次重新说一遍」变成一个配置好、会自己跑的工位——Project 空间 + Research 调研 + Artifact 模板 + Cowork 定时任务 + 一份《我给 Claude 划的边界》。方案见 practice/个人AI指挥台-实践课方案.md",
       "weeks": "1–2 周 ★☆☆☆☆",
       "covers": ["k0101", "k0102", "k0103", "k0104", "k0105", "k0106", "k0107", "k0108", "k0301", "k0302", "k0303", "k0304", "k0305", "k0306", "k0307"],
       "extraSkills": ["Claude Projects", "Cowork 文件夹边界"]
