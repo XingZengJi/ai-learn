@@ -48,7 +48,7 @@ grep -H "对应成就地图课程 ID" Course/*/README.md
 | 项目 | 本体位置 | 原因 |
 |---|---|---|
 | p2 拆书工坊 | `~/workspace/projects/book-workshop/`（独立仓） | 方案写明「从零建仓」，`git init` 是阶段 1 第 1 条操作 |
-| p6 指挥台 | `~/周报工作区/` | 素材与简报不能进公开仓 |
+| p6 指挥台 | `~/workspace/projects/weekly-report/` | 素材与简报不能进公开仓 |
 | p3 让仓库自己看着自己 | **就是 ai-learn 本身** | 改造对象即本仓 |
 | p4 / p5 / p8 | 各自独立仓 | 要被调用、要部署上线 |
 
