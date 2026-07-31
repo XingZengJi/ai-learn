@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `docs/` — 「CC 学习成就地图」网页（GitHub Pages 站点，https://xingzengji.github.io/ai-learn/）
 - `Course/<NN课程名>/` — 课程笔记（中英对照/中文译述）
 - `notes/` — 学习笔记（费曼输出法）
-- `practice/` — 实践产出
+- `practice/` — 实践产出（按项目分文件夹，见下）
 - `tools/` — `check-data.py`（零依赖数据校验）、`e2e.js`（jsdom 冒烟测试）
 
 ## 常用命令
@@ -38,6 +38,26 @@ grep -H "对应成就地图课程 ID" Course/*/README.md
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
 - **`Course/*/_source/` 已 gitignore** —— 英文原文抓取件仅本地留存供核对，不入公开仓库
 - 每篇笔记开头有固定的引用块：课程名/课次/来源/许可。原课程多为 CC BY-NC-SA 4.0，**中文译述属改编作品，必须署名原作者并声明以同一许可提供**（各版 AI Fluency 课还需标注具体合作方，如 Teach For America、CodePath、AFT）
+
+## practice/ 的约定：一个项目一个文件夹，本体建在仓外
+
+`practice/` 下**每个项目一个 `pN-项目名/` 文件夹**（如 `p6-个人AI指挥台/`），内部文件不再重复项目名前缀（`实践课方案.md`、`产品需求清单.md`、`复盘.md`）。文档之间互相指路写「同目录 / 本目录」，将来整体挪动不用改引用。跨项目的文档（`项目集规划书.md`）留在 `practice/` 顶层。
+
+**关键分界：`practice/pN-*/` 只放学习材料与记录（方案、需求、工作表、复盘），项目本体建在 ai-learn 之外。**
+
+| 项目 | 本体位置 | 原因 |
+|---|---|---|
+| p2 拆书工坊 | `~/workspace/projects/book-workshop/`（独立仓） | 方案写明「从零建仓」，`git init` 是阶段 1 第 1 条操作 |
+| p6 指挥台 | `~/周报工作区/` | 素材与简报不能进公开仓 |
+| p3 让仓库自己看着自己 | **就是 ai-learn 本身** | 改造对象即本仓 |
+| p4 / p5 / p8 | 各自独立仓 | 要被调用、要部署上线 |
+
+两条硬理由，别为了「方便」破例：
+
+1. **ai-learn 是公开仓库**，`docs/` 直接走 GitHub Pages。素材、简报、客户相关内容放进来等于发布出去
+2. **把整个学习仓交给 Cowork / Claude Code，正是课程点名的反面教材**（k0302「图省事把整个文档目录丢给它」）。p6 的 FR-8 要练的就是反着做
+
+**项目本体的初始化不要代劳。** 建仓、`git init`、选工作目录都是知识点本身（k0202「在哪启动就只能访问哪」），教练替学习者建等于把第一课上掉了。
 
 ## 核心工作流：「点亮」
 
