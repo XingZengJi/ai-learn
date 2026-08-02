@@ -7,7 +7,7 @@
 ## 仓库结构
 
 - [`学习计划.md`](学习计划.md) — 完整学习计划：20 门课中文速览、10 周分阶段安排、工程基础加油包、进度追踪
-- `docs/` — 成就地图网页（GitHub Pages 站点），进度数据在 `docs/data/progress.json`
+- `docs/` — 成就地图网页（GitHub Pages 站点），进度数据在 `docs/data/anthropic/progress.json`（OpenAI 版在 `docs/data/openai/progress.json`）
 - `notes/` — 学习笔记（费曼输出法）
 - `practice/` — 各阶段实践产出与项目代码
 
