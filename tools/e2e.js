@@ -2,7 +2,7 @@
  * 改了 docs/ 下的 JS/HTML 之后跑；只补 quiz.json 数据的话跑 check-data.py 即可。
  * 用法：cd tools && npm install && node e2e.js
  * 覆盖：Anthropic 全流程（渲染→点星→测验答错重试→全对预览点亮→有题必考无绕过→Esc/清除预览）
- *      + OpenAI 实例（主题标记、星数、概要展示、直接预览点亮、localStorage 键隔离、切换按钮）。
+ *      + OpenAI 实例（主题标记、星数、概要展示、完整答题、localStorage 键隔离、切换按钮）。
  */
 const { JSDOM, VirtualConsole } = require("jsdom");
 const fs = require("fs");
@@ -144,7 +144,7 @@ async function makePage(provider) {
 
   /* Anthropic 侧已无「题库为空」的知识点（175 个全部有题），所以这里改为反向断言：
      有题必考——任何知识点都不该出现「直接预览点亮」的绕过入口。
-     空题库那条路径由下面的 OpenAI 段落覆盖（其 quiz.json 目前全为空）。 */
+     OpenAI 侧同理（c01–c03 已补齐），空题库分支的说明见下面的 OpenAI 段落。 */
   console.log("— Anthropic · 有题必考：无直接点亮入口 —");
   const aQuiz = readJSON("data/anthropic/quiz.json");
   const emptyA = Object.keys(aQuiz).filter(k => !k.startsWith("_") && !aQuiz[k].questions.length);
@@ -186,16 +186,33 @@ async function makePage(provider) {
   check("梯队色注入 CSS 变量", win2.document.documentElement.style.getPropertyValue("--t1") === "#12a5bd");
   check("星图 viewBox 用紧凑布局", doc2.getElementById("starmap").getAttribute("viewBox") === "0 0 1200 520");
 
-  console.log("— OpenAI · 详情：概要 + 直接预览点亮（题库为空）—");
+  /* c01–c03 补齐题库后，OpenAI 侧也不再有 questions 为空的知识点，
+     因此这里同样走「有题必考」，并用一次完整答题验证 :openai 键隔离。
+     空题库那条渲染分支目前两个厂商都没有真实数据覆盖了——它仍是活代码
+     （新增知识点尚未出题时会走到），改 quiz.js 时别把它删掉。 */
+  console.log("— OpenAI · 有题必考 + 完整答题流程 —");
   const modal2 = doc2.getElementById("k-modal");
+  const emptyO = Object.keys(oQuiz).filter(k => !k.startsWith("_") && !oQuiz[k].questions.length);
+  check("所有知识点都有题（无题库知识点：" + (emptyO.length || "无") + "）", emptyO.length === 0);
   [...doc2.querySelectorAll("#list-root .k-item")]
     .find(b => b.textContent.includes("从「提问」到「派活」")).click();
   check("弹窗显示课时概要", modal2.textContent.includes(oQuiz.k0301.summary.slice(0, 12)));
-  check("无测验按钮（questions 为空）", ![...modal2.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("测验（")));
-  const oDirect = [...modal2.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("直接预览点亮"));
-  check("有「直接预览点亮」按钮", !!oDirect);
-  oDirect.click();
+  const oStart = [...modal2.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验"));
+  check("有「开始测验」按钮", !!oStart);
+  check("无「直接预览点亮」绕过入口",
+    ![...modal2.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接预览点亮")));
+
+  oStart.click();
+  const oQs = oQuiz.k0301.questions;
+  const oAnswer = () => {
+    const q = oQs[parseInt(modal2.querySelector(".kq-progress").textContent) - 1];
+    [...modal2.querySelectorAll(".kq-opt")].find(o => o.textContent.includes(q.options[q.answer])).click();
+  };
+  const oNext = () => [...modal2.querySelectorAll(".kd-btn")].find(b => /下一题|查看结果/.test(b.textContent)).click();
+  for (let i = 0; i < oQs.length; i++) { oAnswer(); oNext(); }
+  check("结算：全对通过", modal2.textContent.includes("全对，通过"));
   check("预览写入带 :openai 后缀的键", JSON.parse(win2.localStorage.getItem("cc-map-preview:openai") || "{}")["knowledge:k0301"] === true);
+  check("通过记录写入带 :openai 后缀的键", !!JSON.parse(win2.localStorage.getItem("cc-map-quiz-passed:openai") || "{}").k0301);
   check("不污染 Anthropic 的预览键", win2.localStorage.getItem("cc-map-preview") === null);
 
   console.log("— OpenAI · 切换按钮 —");
