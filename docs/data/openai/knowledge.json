@@ -7,6 +7,7 @@
     { "id": "k0105", "course": "c01", "name": "审查与改进输出" },
     { "id": "k0106", "course": "c01", "name": "添加上下文：文件 / 搜索 / 偏好" },
     { "id": "k0107", "course": "c01", "name": "负责任地使用 ChatGPT" },
+    { "id": "k0108", "course": "c01", "name": "结业综合测验：AI 基础" },
 
     { "id": "k0201", "course": "c02", "name": "从单条提示到工作流" },
     { "id": "k0202", "course": "c02", "name": "推理模型：何时用、擅长什么" },
@@ -17,6 +18,7 @@
     { "id": "k0207", "course": "c02", "name": "工作流设计：目标与步骤拆解" },
     { "id": "k0208", "course": "c02", "name": "检查点与工作流计划" },
     { "id": "k0209", "course": "c02", "name": "把工作流做成 Skill" },
+    { "id": "k0210", "course": "c02", "name": "结业综合测验：应用 AI 基础" },
 
     { "id": "k0301", "course": "c03", "name": "从「提问」到「派活」：Agent 思维" },
     { "id": "k0302", "course": "c03", "name": "Agent 干好活需要什么" },
@@ -24,6 +26,7 @@
     { "id": "k0304", "course": "c03", "name": "ChatGPT Work：项目与上下文" },
     { "id": "k0305", "course": "c03", "name": "指挥 Agent 并审查产出" },
     { "id": "k0306", "course": "c03", "name": "改进、打包与复用工作流" },
-    { "id": "k0307", "course": "c03", "name": "负责任地使用 Agent" }
+    { "id": "k0307", "course": "c03", "name": "负责任地使用 Agent" },
+    { "id": "k0308", "course": "c03", "name": "结业综合测验：智能体与工作流" }
   ]
 }
