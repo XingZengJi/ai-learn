@@ -24,13 +24,13 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-ed
 
 本仓库同系列课程:
 
-- `Course/09FluforEdu/`(本课)—— 教育者版(通用,**c16**)
-- `Course/10FluforStu/` —— 学生版(**c17**)
-- `Course/14T-AIFluency/` —— Teaching AI Fluency: 如何把 4D 教给别人(**c18**)
-- `Course/15AIFAIfornon/` —— 公益组织版(**c19**)
-- `Course/19AIF4SB/` —— 小微企业版(**c20**)
-- `Course/20AIforB/` —— 建造者版(**c21**)
-- `Course/20AIforPK12/` —— pK–12 教育者版 + 培训者工具包(**c22**)
+- `Course/Claude/09FluforEdu/`(本课)—— 教育者版(通用,**c16**)
+- `Course/Claude/10FluforStu/` —— 学生版(**c17**)
+- `Course/Claude/14T-AIFluency/` —— Teaching AI Fluency: 如何把 4D 教给别人(**c18**)
+- `Course/Claude/15AIFAIfornon/` —— 公益组织版(**c19**)
+- `Course/Claude/19AIF4SB/` —— 小微企业版(**c20**)
+- `Course/Claude/20AIforB/` —— 建造者版(**c21**)
+- `Course/Claude/20AIforPK12/` —— pK–12 教育者版 + 培训者工具包(**c22**)
 
 **与 pK–12 版(20AIforPK12)的差别值得留意**: 本课 4 节、偏通用；pK–12 版 10 节,与 Teach For America 合作开发,有贯穿全程的语境文档主线、单设的伦理课,并额外附带一套带教工具包。**两者不是同一门课的新旧版本,是不同的课。**
 

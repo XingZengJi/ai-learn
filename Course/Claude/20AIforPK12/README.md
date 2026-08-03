@@ -98,13 +98,13 @@ Anthropic Academy 官方**学习路径** <https://anthropic.skilljar.com/path/ai
 
 本仓库同系列课程:
 
-- `Course/09FluforEdu/` —— **教育者版(通用)**
-- `Course/10FluforStu/` —— 学生版
-- `Course/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
-- `Course/15AIFAIfornon/` —— 公益组织版
-- `Course/19AIF4SB/` —— 小微企业版
-- `Course/20AIforB/` —— 建造者版
-- `Course/20AIforPK12/`(本课)—— **pK–12 教育者版 + 培训者培训**
+- `Course/Claude/09FluforEdu/` —— **教育者版(通用)**
+- `Course/Claude/10FluforStu/` —— 学生版
+- `Course/Claude/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
+- `Course/Claude/15AIFAIfornon/` —— 公益组织版
+- `Course/Claude/19AIF4SB/` —— 小微企业版
+- `Course/Claude/20AIforB/` —— 建造者版
+- `Course/Claude/20AIforPK12/`(本课)—— **pK–12 教育者版 + 培训者培训**
 
 **与建造者版(20AIforB)的对照**最能看出这套框架怎么换语境:
 
@@ -119,7 +119,7 @@ Anthropic Academy 官方**学习路径** <https://anthropic.skilljar.com/path/ai
 
 **最大的差别在起点**: 建造者版从**问题**出发,pK–12 版从**价值观**出发。这不是风格差异——**教育场景里,「学生本该自己完成的思考被替代了吗」这类问题无法用效率衡量**,所以框架必须先锚定价值观才能往下走。
 
-另外,`Course/14T-AIFluency/`(Teaching AI Fluency)与本课第二部分主题相近,但定位不同: **前者讲「怎么教 4D」的方法,后者直接给你一套 pK–12 场景的现成材料。**
+另外,`Course/Claude/14T-AIFluency/`(Teaching AI Fluency)与本课第二部分主题相近,但定位不同: **前者讲「怎么教 4D」的方法,后者直接给你一套 pK–12 场景的现成材料。**
 
 ## 许可
 

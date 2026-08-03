@@ -68,12 +68,12 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-bu
 
 本仓库同系列课程:
 
-- `Course/09FluforEdu/` —— 教育者版
-- `Course/10FluforStu/` —— 学生版
-- `Course/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
-- `Course/15AIFAIfornon/` —— 公益组织版
-- `Course/19AIF4SB/` —— 小微企业版
-- `Course/20AIforB/`(本课)—— 建造者版
+- `Course/Claude/09FluforEdu/` —— 教育者版
+- `Course/Claude/10FluforStu/` —— 学生版
+- `Course/Claude/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
+- `Course/Claude/15AIFAIfornon/` —— 公益组织版
+- `Course/Claude/19AIF4SB/` —— 小微企业版
+- `Course/Claude/20AIforB/`(本课)—— 建造者版
 
 **与小微企业版(19AIF4SB)的对照**最能说明这门课的特点:
 
@@ -86,7 +86,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-bu
 | 独有工具 | 内环/外环 | **描述链、五个镜头、三种协作模式** |
 | 合作方 | PayPal 等 | **CodePath** |
 
-第 3 课(AI 的能力与局限)是 `Course/18AICandL/` 的浓缩版,与 19AIF4SB 第 3 课内容基本一致——想深入直接看那门课。
+第 3 课(AI 的能力与局限)是 `Course/Claude/18AICandL/` 的浓缩版,与 19AIF4SB 第 3 课内容基本一致——想深入直接看那门课。
 
 ## 许可
 

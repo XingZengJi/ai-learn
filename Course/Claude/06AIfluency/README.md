@@ -62,7 +62,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-framew
 
 ## 与其他课程的关系
 
-- **`Course/19AIF4SB/`(AI Fluency for Small Businesses,c20)**、**`Course/09FluforEdu/`**、**`Course/14T-AIFluency/`** 等——都是基于同一套 Dakan & Feller 的 AI Fluency Framework、面向不同受众(小微企业、教育者等)改写的定制版,4D 核心概念与本课一致,差异主要在场景案例和练习设计上
+- **`Course/Claude/19AIF4SB/`(AI Fluency for Small Businesses,c20)**、**`Course/Claude/09FluforEdu/`**、**`Course/Claude/14T-AIFluency/`** 等——都是基于同一套 Dakan & Feller 的 AI Fluency Framework、面向不同受众(小微企业、教育者等)改写的定制版,4D 核心概念与本课一致,差异主要在场景案例和练习设计上
 - 本课是**该系列里最原始、最完整覆盖框架本身(含技术 Deep Dive)的版本**,适合作为理解其他定制版课程的基础参照
 
 ## 来源

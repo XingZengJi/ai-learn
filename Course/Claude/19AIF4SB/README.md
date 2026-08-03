@@ -23,7 +23,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-sm
 | 09 | 收尾与展望 | 15 分钟 |
 | 10 | Course quiz —— 不收录 | — |
 
-> 第 04 课是交互式模拟器页(与 `Course/18AICandL/` 第 05 课内容基本相同,此处是精简版,少了采样参数一节)。原页面有可操作组件,**建议回站点亲手玩**。
+> 第 04 课是交互式模拟器页(与 `Course/Claude/18AICandL/` 第 05 课内容基本相同,此处是精简版,少了采样参数一节)。原页面有可操作组件,**建议回站点亲手玩**。
 
 ## 课程结构
 
@@ -53,11 +53,11 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-sm
 
 本仓库同系列课程:
 
-- `Course/09FluforEdu/` —— 教育者版
-- `Course/10FluforStu/` —— 学生版
-- `Course/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
-- `Course/15AIFAIfornon/` —— 公益组织版(**c19**)
-- `Course/19AIF4SB/`(本课)—— 小微企业版(**c20**)
+- `Course/Claude/09FluforEdu/` —— 教育者版
+- `Course/Claude/10FluforStu/` —— 学生版
+- `Course/Claude/14T-AIFluency/` —— Teaching AI Fluency(如何把 4D 教给别人)
+- `Course/Claude/15AIFAIfornon/` —— 公益组织版(**c19**)
+- `Course/Claude/19AIF4SB/`(本课)—— 小微企业版(**c20**)
 
 **与公益版(15AIFAIfornon)的对照**最值得一提: 两门课结构高度相似(都是语境文档 → 4D → 两个环 → 合起来 → 组织政策 → 收尾),差别在场景与侧重:
 
@@ -69,7 +69,7 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-sm
 | 那把尺子 | 效率提升 → 所服务社群的更大受益 | 效率提升 → 更好的客户服务与高价值时间 |
 | 合规提醒 | 无 | **有(FTC 指引、州隐私法)** |
 
-另外本课第 3 课的内容,是 `Course/18AICandL/`(**c13**,AI Capabilities and Limitations)的浓缩版——想深入可直接看那门课。
+另外本课第 3 课的内容,是 `Course/Claude/18AICandL/`(**c13**,AI Capabilities and Limitations)的浓缩版——想深入可直接看那门课。
 
 ## 许可
 

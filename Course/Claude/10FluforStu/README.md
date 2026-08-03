@@ -27,13 +27,13 @@ Anthropic Academy 官方课程 <https://anthropic.skilljar.com/ai-fluency-for-st
 
 本仓库同系列课程:
 
-- `Course/09FluforEdu/` —— 教育者版(**c16**)
-- `Course/10FluforStu/`(本课)—— 学生版(**c17**)
-- `Course/14T-AIFluency/` —— Teaching AI Fluency: 如何把 4D 教给别人(**c18**)
-- `Course/15AIFAIfornon/` —— 公益组织版(**c19**)
-- `Course/19AIF4SB/` —— 小微企业版(**c20**)
-- `Course/20AIforB/` —— 建造者版(**c21**)
-- `Course/20AIforPK12/` —— pK–12 教育者版 + 培训者工具包(**c22**)
+- `Course/Claude/09FluforEdu/` —— 教育者版(**c16**)
+- `Course/Claude/10FluforStu/`(本课)—— 学生版(**c17**)
+- `Course/Claude/14T-AIFluency/` —— Teaching AI Fluency: 如何把 4D 教给别人(**c18**)
+- `Course/Claude/15AIFAIfornon/` —— 公益组织版(**c19**)
+- `Course/Claude/19AIF4SB/` —— 小微企业版(**c20**)
+- `Course/Claude/20AIforB/` —— 建造者版(**c21**)
+- `Course/Claude/20AIforPK12/` —— pK–12 教育者版 + 培训者工具包(**c22**)
 
 **本课是唯一一门写给「被教的人」而不是「教的人」的**,其余各版的读者都是从业者。教育者若想了解学生视角,这门课比教育者版更直接。
 

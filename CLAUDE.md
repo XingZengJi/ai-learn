@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `学习计划.md` — 学习计划权威文档：全部课程速览、10 周安排、工程基础加油包、进度追踪表
 - `docs/` — 「CC 学习成就地图」网页（GitHub Pages 站点，https://xingzengji.github.io/ai-learn/）
-- `Course/<NN课程名>/` — 课程笔记（中英对照/中文译述）
+- `Course/<厂商>/<NN课程名>/` — 课程笔记（中英对照/中文译述）。厂商层目前有 `Claude/`（Anthropic Skilljar 课程）与 `Codex/`（OpenAI Codex 课程）
 - `notes/` — 学习笔记（费曼输出法）
 - `practice/` — 实践产出（按项目分文件夹，见下）
 - `tools/` — `check-data.py`（零依赖数据校验）、`e2e.js`（jsdom 冒烟测试）
@@ -26,17 +26,19 @@ cd tools && npm install && node e2e.js
 python3 -m http.server 8000 -d docs   # → http://localhost:8000
 
 # 课程文件夹 ↔ 成就地图课程 ID 的映射（两套编号不一致，别靠猜）
-grep -H "对应成就地图课程 ID" Course/*/README.md
+grep -H "对应成就地图课程 ID" Course/*/*/README.md
 ```
 
 `e2e.js` 是单文件脚本，**没有「只跑某个用例」的入口**；要缩小范围就临时注释掉不关心的段落，别去搭测试框架。仓库没有 lint、没有构建步骤。
 
 ### Course/ 的约定
 
+- **第一层是厂商**：`Course/Claude/`（Anthropic Skilljar 课程，原先直接摊在 `Course/` 下的 21 个文件夹已整体挪进来）、`Course/Codex/`（OpenAI Codex 课程）。新抓的课先判断归属哪个厂商，再在其下建课程文件夹；下面所有约定都作用在**课程文件夹**这一层
+- **`Course/Codex/` 的笔记挂在成就地图的 openai 厂商下**（`docs/data/openai/`，与现有的 OpenAI Academy 证书课 c01–c03 同一套 ID 空间，接着往下编号），不新开第三个厂商
 - **文件夹名 = 两位序号 + 简称**（如 `19AIF4SB`、`20AIforB`）。序号是学习/收录顺序，**不等于成就地图的课程 ID**（例如 `09FluforEdu` 对应 `c16`），也不保证唯一（`20AIforB` 与 `20AIforPK12` 同号）。两套编号的映射写在各文件夹 README 的「对应成就地图课程 ID」一行
 - **每个课程各自一套文件名前缀**，由该文件夹第一课确定后续沿用，不是全仓库统一格式（如 `ai-fluency-smb-NN-标题.md`、`mcp-N-标题.md`）。新建文件夹时先看有没有更贴近的现成前缀可沿用，没有再另起一个
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
-- **`Course/*/_source/` 已 gitignore** —— 英文原文抓取件仅本地留存供核对，不入公开仓库
+- **`Course/*/*/_source/` 已 gitignore** —— 英文原文抓取件仅本地留存供核对，不入公开仓库
 - 每篇笔记开头有固定的引用块：课程名/课次/来源/许可。原课程多为 CC BY-NC-SA 4.0，**中文译述属改编作品，必须署名原作者并声明以同一许可提供**（各版 AI Fluency 课还需标注具体合作方，如 Teach For America、CodePath、AFT）
 
 ## practice/ 的约定：一个项目一个文件夹，本体建在仓外
@@ -116,7 +118,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 用户说「给 cXX 出题」「补 cXX 的题库/知识点详情」时执行（默认 Anthropic，说明是 OpenAI 时改 `data/openai/` 下的对应文件）。**无需改任何 JS/HTML**——弹窗按 `docs/data/<厂商>/quiz.json` 数据自动填充：
 
-1. 通读 `Course/<课程名>/` 全部笔记；若有结业测验笔记，出题风格与考点向它对齐
+1. 通读 `Course/<厂商>/<课程名>/` 全部笔记；若有结业测验笔记，出题风格与考点向它对齐
 2. 核对该厂商 `knowledge.json` 里该课的知识点划分是否覆盖全部课次，缺了先补（c01 曾漏掉 Skills 课）；增删 Anthropic 知识点要同步 `学习计划.md` 开头那句「N 个知识点是星星，M 门课是星座」的计数文案
 3. 每个知识点写入 quiz.json：`summary`（2–4 句概要，PM 友好语言）+ 3–4 道单选题。每题 4 个选项，`answer` 是 0 起下标，`explain` 必填并写清依据。题目组成：记忆型考点为主，**每个知识点至少 1 道场景判断题**（给出具体工作场景，选做法或选工具）
 4. 校验：`python3 tools/check-data.py`；**批量补题后 `node e2e.js` 也要跑**——它的断言会被数据变化打破（曾把某个知识点写死当「无题库」样本、把课程数写死成 20）
