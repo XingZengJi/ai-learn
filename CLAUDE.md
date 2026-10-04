@@ -34,7 +34,8 @@ grep -H "对应成就地图课程 ID" Course/*/*/README.md
 ### Course/ 的约定
 
 - **第一层是厂商**：`Course/Claude/`（Anthropic Skilljar 课程，原先直接摊在 `Course/` 下的 21 个文件夹已整体挪进来）、`Course/Codex/`（OpenAI Codex 课程）。新抓的课先判断归属哪个厂商，再在其下建课程文件夹；下面所有约定都作用在**课程文件夹**这一层
-- **`Course/Codex/` 的笔记挂在成就地图的 openai 厂商下**（`docs/data/openai/`，与现有的 OpenAI Academy 证书课 c01–c03 同一套 ID 空间，接着往下编号），不新开第三个厂商
+- **`Course/Codex/` 的笔记挂在成就地图的 openai 厂商下**（`docs/data/openai/`），不新开第三个厂商。现有三个文件夹就是地图上已有的 `c01`–`c03`（映射见 `Course/Codex/README.md` 的课程表），以后新收的课才接着往下编号
+- **`Course/Codex/` 是自写学习笔记，不是译述**：OpenAI Academy 课次是 SCORM 互动课件、站内拿不到文字稿，且没有 CC 授权，不能把课件全文译述推进公开仓。每课照 `Course/Codex/笔记模板.md` 起头（引用块与 `Course/Claude/` 不同）；下文「抓取并译述一门新课」只适用于 `Course/Claude/`
 - **文件夹名 = 两位序号 + 简称**（如 `19AIF4SB`、`20AIforB`）。序号是学习/收录顺序，**不等于成就地图的课程 ID**（例如 `09FluforEdu` 对应 `c16`），也不保证唯一（`20AIforB` 与 `20AIforPK12` 同号）。两套编号的映射写在各文件夹 README 的「对应成就地图课程 ID」一行
 - **每个课程各自一套文件名前缀**，由该文件夹第一课确定后续沿用，不是全仓库统一格式（如 `ai-fluency-smb-NN-标题.md`、`mcp-N-标题.md`）。新建文件夹时先看有没有更贴近的现成前缀可沿用，没有再另起一个
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
@@ -137,7 +138,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 ## 工作流：抓取并译述一门新课
 
-用户给 Skilljar 课程链接、要求存到某个文件夹时执行。
+用户给 Skilljar 课程链接、要求存到某个文件夹时执行（仅 `Course/Claude/`；OpenAI Academy 课程不走这条，见上文 Course/ 约定）。
 
 1. **取课次清单**：抓课程页（`https://anthropic.skilljar.com/<slug>`），课次链接在 `a.lesson-modular` 的 `href`；`li.section` / `.lesson-section` 是**章节标题不是课次**，别算进去。学习路径（`/path/<slug>`）下挂多门课，各自有独立 slug 与合作方，需分别抓
 2. **抓正文**：登录态是纯 cookie（`sj_sessionid`），`curl` 即可，无需浏览器。**正文容器是 `#lesson-main-content`**
