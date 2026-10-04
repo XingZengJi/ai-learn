@@ -171,43 +171,51 @@
   }
 
   /* 网页没法直接写进手机相册，相册权限由浏览器和系统自己管，页面也申请不了。能走的路只有两条：
-   *   ① 系统分享面板（navigator.share 带文件）：iOS Safari 15+、安卓 Chrome 支持，面板里选「存储图像」就进相册
-   *   ② 下载：电脑上正常；手机上只会进「文件 / 下载」而不是相册，内置浏览器（微信等）还会直接忽略
-   * 所以能分享文件就优先走 ①，否则退回 ②，并且点了之后一定给出文字反馈，不让用户以为没反应。 */
+   *   ① 系统分享面板（navigator.share 带文件）：iPhone 上面板里有「存储图像」，选了就进相册
+   *   ② 下载：电脑进下载列表；安卓进「下载」，相册一般也能看到；iPhone 只进「文件」不进相册
+   * 每人只给一个按钮：iPhone/iPad 且能分享文件 → ①「保存到相册」；其余 → ②「下载图片」。
+   * 安卓也支持 ①，但它的分享面板通常没有「存到相册」这一项，按钮叫「保存到相册」会名不副实，所以安卓走下载。 */
+  function isIOS() {
+    /* iPadOS 13+ 的 UA 伪装成 Mac，只能靠触控点数认出来 */
+    return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+      (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  }
+
   function saveButton(blob) {
-    const wrap = el("div", "sh-actions");
+    const box = el("div", "sh-actions");
     const tip = el("p", "kd-hint");
     const file = typeof File === "function" ? new File([blob], "我的星图.png", { type: "image/png" }) : null;
-    const canShareFile = !!(file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
+    const useShareSheet = isIOS() &&
+      !!(file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
 
-    if (canShareFile) {
-      const btn = el("button", "kd-btn primary", "保存到相册 / 分享");
+    if (useShareSheet) {
+      const btn = el("button", "kd-btn primary", "保存到相册");
       btn.type = "button";
       btn.addEventListener("click", () => {
         navigator.share({ files: [file] }).then(
-          () => { tip.textContent = "✓ 完成。存到相册的话，去相册里找"; },
+          () => { tip.textContent = "✓ 完成，去相册里看看吧"; },
           err => {
             /* 用户自己关掉分享面板不算失败 */
             if (err && err.name === "AbortError") return;
-            tip.textContent = "这个浏览器打不开分享面板，请长按上面的图片保存";
+            tip.textContent = "没能打开保存面板，请长按上面的图片保存";
           });
       });
-      wrap.appendChild(btn);
+      box.appendChild(btn);
+      tip.textContent = "点按钮后，在弹出的面板里选「存储图像」";
+    } else {
+      const dl = el("a", "kd-btn primary", "下载图片");
+      dl.href = URL.createObjectURL(blob);
+      dl.download = "我的星图.png";
+      dl.addEventListener("click", () => {
+        tip.textContent = "已开始下载，在浏览器的下载列表里找。手机没反应的话，请长按上面的图片保存";
+      });
+      box.appendChild(dl);
     }
 
-    const url = URL.createObjectURL(blob);
-    const dl = el("a", "kd-btn" + (canShareFile ? "" : " primary"), "下载图片");
-    dl.href = url;
-    dl.download = "我的星图.png";
-    dl.addEventListener("click", () => {
-      tip.textContent = "已开始下载：电脑在浏览器的下载列表里；手机通常在「文件 / 下载」里，不在相册。没反应的话请长按图片保存";
-    });
-    wrap.appendChild(dl);
-
-    const box = el("div");
-    box.appendChild(wrap);
-    box.appendChild(tip);
-    return box;
+    const wrap = el("div");
+    wrap.appendChild(box);
+    wrap.appendChild(tip);
+    return wrap;
   }
 
   function fallbackCopy(input, done) {
