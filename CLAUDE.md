@@ -98,8 +98,13 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 **双版本**：站点承载两套课程体系——Anthropic（默认）和 OpenAI Academy，右上角按钮切换。厂商解析顺序：URL `?v=openai` → localStorage `cc-map-provider` → 默认 anthropic。数据按厂商目录隔离：`data/anthropic/` 与 `data/openai/` 各有同构的 5 个 JSON。OpenAI 版的 localStorage 键带 `:openai` 后缀（`cc-map-preview:openai` 等），Anthropic 用无后缀键（兼容历史数据）。
 
-- `js/app.js` — 主逻辑：顶部 `PROVIDERS` 配置（数据目录、眉题、页脚链接、存储后缀），按厂商并行加载 5 个 JSON，合并权威进度与浏览器本地「预览点亮」（localStorage key `cc-map-preview[:openai]`），状态优先级 `done > preview > doing > todo`，渲染课程/项目列表
-- `js/quiz.js` — 知识点详情弹窗 + 测验：点击星星/列表项打开详情（概要 + 测验按钮）。**有题必考、无题可直点**——quiz.json 里 `questions` 非空的知识点必须测验全对才能预览点亮（通过记录存 `cc-map-quiz-passed[:openai]`，「清除预览」不清它）；`questions` 为空或无条目的知识点显示概要/占位 + 「直接预览点亮」按钮。**现状：两个厂商的知识点已全部有题**（Anthropic 175 个、OpenAI 26 个），那条「直接预览点亮」分支已无真实数据覆盖——但它仍是活代码（新增知识点尚未出题时会走到），别当死代码删掉
+- `js/app.js` — 主逻辑：顶部 `PROVIDERS` 配置（数据目录、眉题、页脚链接、存储后缀），按厂商并行加载 5 个 JSON，渲染课程/项目列表。**三种星图互不混合**，由网址 `#` 决定：
+  - **我的星图**（默认）：访客在本浏览器答题点亮的记录，localStorage key `cc-map-preview[:openai]`（键名沿用早期「预览点亮」叫法，改名会丢访客已有记录）
+  - **作者的星图**（`#author`）：`progress.json` 的正式进度，只读
+  - **别人分享的星图**（`#s=<编码>&n=<昵称>`）：只读，编码规则见 `js/share.js` 顶部注释
+  - 项目（行星）是作者的实战项目，三种视图下都显示 `progress.json` 的项目进度
+- `js/share.js` — 分享链接编解码 + 分享弹窗（复制链接 / 生成图片）。**链接按「课程号 → 知识点序号位图」编码，删除或重新编号已有知识点会让旧链接错位**；新增知识点不受影响
+- `js/quiz.js` — 知识点详情弹窗 + 测验：点击星星/列表项打开详情（概要 + 测验按钮）。**有题必考、无题可直点**——quiz.json 里 `questions` 非空的知识点必须测验全对才能点亮（通过记录存 `cc-map-quiz-passed[:openai]`，「清空」不清它）；`questions` 为空或无条目的知识点显示概要/占位 + 「直接点亮」按钮。在作者的 / 别人分享的星图里弹窗只读，只给「去我的星图测验」。**现状：两个厂商的知识点已全部有题**（Anthropic 175 个、OpenAI 26 个），那条「直接点亮」分支已无真实数据覆盖——但它仍是活代码（新增知识点尚未出题时会走到），别当死代码删掉
 - 全对撒花：通过时先把知识点 id 记进 `pendingCelebrate`，**等弹窗关闭后**才在那颗星周围迸发纸屑（弹窗开着时撒等于被盖住）。定位靠 starmap 给每个星星组打的 `data-k` 属性——这是 `starmap.js` 与 `quiz.js` 之间的隐式契约，改星星渲染时别把它弄丢
 - `js/starmap.js` — SVG 星图：知识点=星星，课程=星座，用课程 ID 做种子的伪随机布局保证每次渲染一致；整座点亮加光环与 ✦ 徽记。**天区/槽位/viewBox 全部来自各厂商 courses.json 的 `layout` 字段**，星图代码不含任何厂商假设（星座大小与布局间距的换算见上文）
 - `js/heatmap.js` — GitHub 贡献热力图：客户端直接请求 `github-contributions-api.jogruber.de` 公开 API，SVG 自绘；两个版本共享

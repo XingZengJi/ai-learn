@@ -1,11 +1,11 @@
-/* 知识点详情与测验弹窗：详情 → 逐题作答 → 全对自动预览点亮 */
+/* 知识点详情与测验弹窗：详情 → 逐题作答 → 全对自动点亮（记在本浏览器的「我的星图」） */
 (function () {
   "use strict";
 
-  const STATUS_TEXT = { done: "已点亮", preview: "预览点亮", doing: "进行中", todo: "未点亮" };
+  const STATUS_TEXT = { done: "已点亮", doing: "进行中", todo: "未点亮" };
 
   let modal, panel, closeBtn;
-  let ctx = null; /* 每次 open 由 app.js 注入：{ k, course, color, quiz, state, passedDate, onPass, onTogglePreview } */
+  let ctx = null; /* 每次 open 由 app.js 注入：{ k, course, color, quiz, state, readOnly, onGoMine, passedDate, onPass, onTogglePreview } */
   let run = null; /* 一次测验的进行状态：{ idx, wrong[], order[][] } */
   let pendingCelebrate = null; /* 刚测验通过的知识点 id，等弹窗关闭后在那颗星周围撒花 */
 
@@ -63,7 +63,19 @@
     const foot = document.createElement("div");
     foot.className = "kd-actions";
 
-    if (quiz && quiz.questions.length) {
+    if (ctx.readOnly) {
+      /* 看作者的 / 别人的星图时不能在这里答题，否则成绩记到谁头上说不清 */
+      const go = document.createElement("button");
+      go.className = "kd-btn primary";
+      go.type = "button";
+      go.textContent = "去我的星图测验";
+      go.addEventListener("click", ctx.onGoMine);
+      foot.appendChild(go);
+      const hint = document.createElement("p");
+      hint.className = "kd-hint";
+      hint.textContent = "这是别人的星图，测验成绩只记在你自己的星图上";
+      foot.appendChild(hint);
+    } else if (quiz && quiz.questions.length) {
       const passed = ctx.passedDate();
       if (passed) {
         const ok = document.createElement("p");
@@ -86,11 +98,11 @@
         foot.appendChild(hint);
       }
     } else if (st !== "done") {
-      /* 题库待补充的知识点：保留直接预览点亮 */
+      /* 题库待补充的知识点：保留直接点亮 */
       const btn = document.createElement("button");
       btn.className = "kd-btn";
       btn.type = "button";
-      btn.textContent = st === "preview" ? "取消预览点亮" : "直接预览点亮";
+      btn.textContent = "直接点亮";
       btn.addEventListener("click", () => { ctx.onTogglePreview(); renderDetail(); });
       foot.appendChild(btn);
     }
@@ -186,15 +198,15 @@
 
     if (!nWrong) {
       const alreadyDone = ctx.state.statusOf("knowledge", ctx.k.id) === "done";
-      if (!alreadyDone) ctx.onPass(); /* 记录通过 + 预览点亮 + 重绘星图 */
+      if (!alreadyDone) ctx.onPass(); /* 记录通过 + 点亮 + 重绘星图 */
       pendingCelebrate = ctx.k.id; /* 关闭弹窗那一刻，在这颗星周围撒花 */
       box.innerHTML =
         '<div class="kq-star" style="color:' + ctx.color + '">✦</div>' +
         '<h2 id="k-modal-title">' + total + " 题全对，通过！</h2>" +
         (alreadyDone
-          ? '<p class="kq-note">这颗星早已正式点亮，温习成功 🎓</p>'
-          : '<p class="kq-note">这颗星已<strong>预览点亮</strong>。回到 Claude Code 说一句「点亮 ' +
-            ctx.k.name + '」，即可正式写入仓库并计入热力图。</p>');
+          ? '<p class="kq-note">这颗星早已点亮，温习成功 🎓</p>'
+          : '<p class="kq-note">这颗星<strong>已点亮</strong>，记录保存在这个浏览器里。' +
+            '点顶部的「分享我的星图」，可以生成链接或图片。</p>');
       const done = document.createElement("button");
       done.className = "kd-btn primary";
       done.type = "button";

@@ -230,18 +230,25 @@ details.course-k summary .list-row { border-bottom: none; }
 .hm-legend-label { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); }
 .hm-fallback { color: var(--ink-2); font-size: 14px; padding: 18px 0; }
 
-/* ============ 预览横幅 / 工具提示 / 页脚 ============ */
-.preview-banner {
+/* ============ 视图条 / 工具提示 / 页脚 ============ */
+.view-bar {
   position: sticky; top: 0; z-index: 20;
-  display: flex; justify-content: center; align-items: center; gap: 16px;
-  background: #2a2412; border-bottom: 1px solid #5c4a1a;
-  color: #ecd9a0; padding: 8px 16px; font-size: 13.5px;
+  display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 16px;
+  background: rgba(16, 22, 39, 0.92); border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  color: var(--ink-2); padding: 8px 16px; font-size: 13.5px; text-align: center;
 }
-.preview-banner button {
-  background: transparent; color: #ecd9a0;
-  border: 1px solid #8a6d2a; border-radius: 999px; padding: 3px 14px; font-size: 12.5px;
+.view-bar-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.view-bar button {
+  background: transparent; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: 12.5px;
 }
-.preview-banner button:hover { background: #3a3218; }
+.view-bar button:hover { border-color: var(--ink-3); }
+.view-bar button.primary { border-color: var(--t2); background: rgba(57, 135, 229, 0.16); }
+.view-bar button.quiet { color: var(--ink-3); }
+/* 看别人的星图时视图条换成暖色，一眼看出「这不是我的」 */
+body[data-view="author"] .view-bar,
+body[data-view="shared"] .view-bar { background: rgba(42, 36, 18, 0.94); border-bottom-color: #5c4a1a; color: #ecd9a0; }
 
 .tooltip {
   position: fixed; z-index: 30; pointer-events: none;
@@ -296,6 +303,20 @@ details.course-k summary .list-row { border-bottom: none; }
 .kd-btn.primary:hover { background: rgba(57, 135, 229, 0.22); }
 .kd-hint { font-size: 12.5px; color: var(--ink-3); }
 .kd-passed { font-family: var(--font-mono); font-size: 12.5px; color: var(--t1); }
+
+/* 分享弹窗 */
+.sh-field { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+.sh-label { font-size: 12.5px; color: var(--ink-3); }
+.sh-input {
+  width: 100%; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 14px;
+}
+.sh-input:focus { border-color: var(--t2); outline: none; }
+.sh-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.sh-note { margin-top: 12px; }
+.sh-image { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.sh-image img { width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+a.kd-btn { display: inline-block; text-decoration: none; }
 
 .kq-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
 .kq-progress { color: var(--ink-3); font-size: 13px; }

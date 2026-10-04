@@ -1,7 +1,8 @@
 /* 成就地图端到端冒烟测试（无需浏览器，用 jsdom 模拟）。
  * 改了 docs/ 下的 JS/HTML 之后跑；只补 quiz.json 数据的话跑 check-data.py 即可。
  * 用法：cd tools && npm install && node e2e.js
- * 覆盖：Anthropic 全流程（渲染→点星→测验答错重试→全对预览点亮→有题必考无绕过→Esc/清除预览）
+ * 覆盖：Anthropic 全流程（渲染→点星→测验答错重试→全对点亮→有题必考无绕过→分享弹窗→Esc/清空）
+ *      + 三种星图（我的 / 作者的 #author / 别人分享的 #s=）与分享链接编码
  *      + OpenAI 实例（主题标记、星数、概要展示、完整答题、localStorage 键隔离、切换按钮）。
  */
 const { JSDOM, VirtualConsole } = require("jsdom");
@@ -22,12 +23,12 @@ function readJSON(rel) {
   return JSON.parse(fs.readFileSync(path.join(DOCS, rel), "utf8"));
 }
 
-/* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage */
-async function makePage(provider) {
+/* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage；hash 形如 "#author" */
+async function makePage(provider, hash) {
   const virtualConsole = new VirtualConsole();
   virtualConsole.on("error", () => {}); /* jsdom 不支持导航跳转，静默这类噪音 */
   const dom = new JSDOM(html, {
-    url: "http://localhost/", runScripts: "dangerously",
+    url: "http://localhost/" + (hash || ""), runScripts: "dangerously",
     pretendToBeVisual: true, virtualConsole
   });
   const { window } = dom;
@@ -42,7 +43,7 @@ async function makePage(provider) {
     return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(fs.readFileSync(p, "utf8"))) });
   };
 
-  for (const f of ["js/starmap.js", "js/quiz.js", "js/heatmap.js", "js/app.js"]) {
+  for (const f of ["js/starmap.js", "js/quiz.js", "js/heatmap.js", "js/share.js", "js/app.js"]) {
     window.eval(fs.readFileSync(path.join(DOCS, f), "utf8"));
   }
   await new Promise(r => setTimeout(r, 300)); // 等 loadData + renderAll
@@ -89,7 +90,7 @@ async function makePage(provider) {
   const nQ = quiz.k0101.questions.length;
   const startBtn = [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验"));
   check("有「开始测验（" + nQ + " 题）」按钮", !!startBtn && startBtn.textContent.includes(nQ + " 题"));
-  check("无「直接预览点亮」按钮", ![...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接预览点亮")));
+  check("无「直接点亮」按钮", ![...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接点亮")));
 
   console.log("— Anthropic · 测验：先答错一题再全对 —");
   startBtn.click();
@@ -117,8 +118,8 @@ async function makePage(provider) {
   const passed = JSON.parse(win.localStorage.getItem("cc-map-quiz-passed") || "{}");
   check("通过记录已写入", !!passed.k0101);
   const preview = JSON.parse(win.localStorage.getItem("cc-map-preview") || "{}");
-  check("预览点亮已写入（无后缀键）", preview["knowledge:k0101"] === true);
-  check("预览横幅出现", !document.getElementById("preview-banner").hidden);
+  check("点亮记录已写入（无后缀键）", preview["knowledge:k0101"] === true);
+  check("视图条显示「已点亮 1 颗」", document.getElementById("view-bar-text").textContent.includes("已点亮 1 颗"));
 
   check("弹窗还开着时不撒花（否则纸屑被弹窗盖住）", !document.querySelector(".confetti-burst"));
   [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("完成")).click();
@@ -139,11 +140,11 @@ async function makePage(provider) {
   [...document.querySelectorAll("#list-root .k-item")]
     .find(b => b.textContent.includes("认识 Claude 与首次对话")).click();
   check("显示「已通过测验」", modal.textContent.includes("已通过测验"));
-  check("按钮变「重新测验」", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("重新测验")));
+  check("已点亮的星按钮变「温习测验」", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("温习测验")));
   modal.querySelector(".k-modal-close").click();
 
   /* Anthropic 侧已无「题库为空」的知识点（175 个全部有题），所以这里改为反向断言：
-     有题必考——任何知识点都不该出现「直接预览点亮」的绕过入口。
+     有题必考——任何知识点都不该出现「直接点亮」的绕过入口。
      OpenAI 侧同理（c01–c03 已补齐），空题库分支的说明见下面的 OpenAI 段落。 */
   console.log("— Anthropic · 有题必考：无直接点亮入口 —");
   const aQuiz = readJSON("data/anthropic/quiz.json");
@@ -152,17 +153,97 @@ async function makePage(provider) {
   [...document.querySelectorAll("#list-root .k-item")]
     .find(b => b.textContent.includes("Claude Code 是什么")).click();
   check("有「开始测验」按钮", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("测验（")));
-  check("无「直接预览点亮」绕过入口",
-    ![...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接预览点亮")));
+  check("无「直接点亮」绕过入口",
+    ![...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接点亮")));
   check("未答题则不写入预览", JSON.parse(win.localStorage.getItem("cc-map-preview"))["knowledge:k0201"] === undefined);
   modal.querySelector(".k-modal-close").click();
 
-  console.log("— Anthropic · Esc 关闭 & 清除预览 —");
+  console.log("— Anthropic · 分享弹窗 —");
+  const shareBtn = [...document.querySelectorAll("#view-bar-actions button")].find(b => b.textContent === "分享我的星图");
+  check("点亮后视图条出现「分享我的星图」", !!shareBtn);
+  shareBtn.click();
+  const shareModal = document.getElementById("share-modal");
+  check("分享弹窗打开", !shareModal.hidden);
+  const [nameInput, linkInput] = shareModal.querySelectorAll(".sh-input");
+  check("链接带厂商并编码了 k0101（" + linkInput.value + "）", linkInput.value.endsWith("?v=anthropic#s=1.1-2"));
+  nameInput.value = "小明";
+  nameInput.dispatchEvent(new win.Event("input"));
+  check("填昵称后链接带上 &n=", linkInput.value.endsWith("&n=" + encodeURIComponent("小明")));
+  check("昵称被记住", win.localStorage.getItem("cc-map-nickname") === "小明");
+  check("有「生成图片」按钮", [...shareModal.querySelectorAll(".kd-btn")].some(b => b.textContent === "生成图片"));
+  shareModal.querySelector(".k-modal-close").click();
+  check("分享弹窗可关闭", shareModal.hidden);
+
+  console.log("— Anthropic · Esc 关闭 & 清空我的星图 —");
   document.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape" }));
   check("Esc 关闭弹窗", modal.hidden);
-  document.getElementById("clear-preview").click();
-  check("清除预览后 preview 为空", win.localStorage.getItem("cc-map-preview") === "{}");
+  document.getElementById("clear-mine").click();
+  check("清空要点两次：第一次只变成确认态", win.localStorage.getItem("cc-map-preview") !== "{}" &&
+    document.getElementById("clear-mine").textContent === "确认清空？");
+  document.getElementById("clear-mine").click();
+  check("确认后点亮记录为空", win.localStorage.getItem("cc-map-preview") === "{}");
   check("quiz-passed 记录保留", JSON.parse(win.localStorage.getItem("cc-map-quiz-passed")).k0101 != null);
+
+  /* ==================== 三种星图互不混合 ==================== */
+  console.log("— 分享链接编码 —");
+  const allIds = knowledge.map(k => k.id);
+  const round = win.Share.decode(win.Share.encode(allIds));
+  check("全部 " + allIds.length + " 个知识点编码后能原样解回",
+    !!round && round.slice().sort().join() === allIds.slice().sort().join());
+  check("编码与 share.js 注释里的例子一致",
+    win.Share.encode(["k0101", "k0102", "k0202", "k0203", "k0205"]) === "1.1-6.2-18");
+  const fullLen = win.Share.encode(allIds).length;
+  check("全部点亮的链接也够短（" + fullLen + " 字符 ≤ 200）", fullLen <= 200);
+  check("格式不对的编码返回 null", win.Share.decode("2.zz") === null && win.Share.decode("1.!!") === null);
+
+  console.log("— 我的星图不混入作者进度 —");
+  const progress = readJSON("data/anthropic/progress.json");
+  const courseList = readJSON("data/anthropic/courses.json").courses;
+  const authorDoing = Object.keys(progress.courses).find(c => progress.courses[c].status === "doing");
+  const courseDot = (d, cid) => {
+    const name = courseList.find(c => c.id === cid).cn;
+    const det = [...d.querySelectorAll("#list-root details.course-k")]
+      .find(x => x.querySelector(".name").firstChild.textContent === name);
+    return det.querySelector(".status-dot").className;
+  };
+  check("我的星图：作者「进行中」的 " + authorDoing + " 显示为未开始", courseDot(document, authorDoing).includes("todo"));
+  check("我的星图：统计行不显示项目数", document.getElementById("stat-projects").hidden);
+
+  console.log("— 作者的星图（#author）—");
+  const winA = await makePage(null, "#author");
+  const docA = winA.document;
+  check("body 标记 data-view=author", docA.body.dataset.view === "author");
+  check("视图条说明是作者的星图", docA.getElementById("view-bar-text").textContent.includes("作者的星图"));
+  check("作者的 " + authorDoing + " 显示为进行中", courseDot(docA, authorDoing).includes("doing"));
+  check("统计行显示项目数", !docA.getElementById("stat-projects").hidden);
+  [...docA.querySelectorAll("#list-root .k-item")].find(b => b.textContent.includes("认识 Claude 与首次对话")).click();
+  const modalA = docA.getElementById("k-modal");
+  check("只读：有「去我的星图测验」", [...modalA.querySelectorAll(".kd-btn")].some(b => b.textContent === "去我的星图测验"));
+  check("只读：没有「开始测验」", ![...modalA.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("开始测验")));
+
+  console.log("— 别人分享的星图（#s=）—");
+  const sharedHash = "#s=" + win.Share.encode(["k0101", "k0102", "k9999"]) + "&n=" + encodeURIComponent("小红");
+  const winS = await makePage(null, sharedHash);
+  const docS = winS.document;
+  check("body 标记 data-view=shared", docS.body.dataset.view === "shared");
+  check("视图条显示昵称和点亮数（不存在的 k9999 被忽略）",
+    /「小红」.*已点亮 2 颗/.test(docS.getElementById("view-bar-text").textContent));
+  check("星图上亮 2 颗", docS.querySelectorAll("#starmap .star.lit").length === 2);
+  check("打开分享链接不写入访客自己的记录", winS.localStorage.getItem("cc-map-preview") === null);
+  [...docS.querySelectorAll("#list-root .k-item")].find(b => b.textContent.includes("认识 Claude 与首次对话")).click();
+  const modalS = docS.getElementById("k-modal");
+  const goMine = [...modalS.querySelectorAll(".kd-btn")].find(b => b.textContent === "去我的星图测验");
+  check("只读：有「去我的星图测验」", !!goMine);
+  goMine.click();
+  check("点了之后切回我的星图", docS.body.dataset.view === "mine" && winS.location.hash === "");
+  check("并在我的星图里打开同一个知识点的测验入口",
+    !modalS.hidden && [...modalS.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("开始测验")));
+  check("我的星图是空的（没继承分享者的点亮）", docS.querySelectorAll("#starmap .star.lit").length === 0);
+
+  console.log("— 解不开的分享链接 —");
+  const winX = await makePage(null, "#s=garbage");
+  check("退回我的星图", winX.document.body.dataset.view === "mine");
+  check("并提示链接无法识别", winX.document.getElementById("view-bar-text").textContent.includes("无法识别"));
 
   /* ==================== OpenAI 实例 ==================== */
   const win2 = await makePage("openai");
@@ -199,8 +280,8 @@ async function makePage(provider) {
   check("弹窗显示课时概要", modal2.textContent.includes(oQuiz.k0301.summary.slice(0, 12)));
   const oStart = [...modal2.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验"));
   check("有「开始测验」按钮", !!oStart);
-  check("无「直接预览点亮」绕过入口",
-    ![...modal2.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接预览点亮")));
+  check("无「直接点亮」绕过入口",
+    ![...modal2.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接点亮")));
 
   oStart.click();
   const oQs = oQuiz.k0301.questions;
