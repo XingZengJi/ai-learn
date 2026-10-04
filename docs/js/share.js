@@ -150,17 +150,15 @@
     imgBtn.addEventListener("click", () => {
       imgArea.textContent = "";
       imgArea.appendChild(el("p", "kd-hint", "正在生成…"));
-      makeImage(name() || "一位学习者").then(url => {
+      makeImage(name() || "一位学习者").then(out => {
         imgArea.textContent = "";
+        /* 预览图用 data: 地址：微信等内置浏览器长按 blob: 图片常常存不下来 */
         const img = el("img");
-        img.src = url;
+        img.src = out.dataUrl;
         img.alt = "我的星图";
         imgArea.appendChild(img);
-        imgArea.appendChild(el("p", "kd-hint", "手机：长按图片保存；电脑：点下面的按钮下载"));
-        const dl = el("a", "kd-btn", "下载图片");
-        dl.href = url;
-        dl.download = "我的星图.png";
-        imgArea.appendChild(dl);
+        imgArea.appendChild(el("p", "kd-hint", "手机最稳的办法：长按上面的图片，选「存储到照片 / 保存图片」"));
+        imgArea.appendChild(saveButton(out.blob));
       }).catch(() => {
         imgArea.textContent = "";
         imgArea.appendChild(el("p", "kd-hint", "这个浏览器生成不了图片，可以直接截图星图分享。"));
@@ -170,6 +168,46 @@
     modal.hidden = false;
     document.body.style.overflow = "hidden";
     nameInput.focus();
+  }
+
+  /* 网页没法直接写进手机相册，相册权限由浏览器和系统自己管，页面也申请不了。能走的路只有两条：
+   *   ① 系统分享面板（navigator.share 带文件）：iOS Safari 15+、安卓 Chrome 支持，面板里选「存储图像」就进相册
+   *   ② 下载：电脑上正常；手机上只会进「文件 / 下载」而不是相册，内置浏览器（微信等）还会直接忽略
+   * 所以能分享文件就优先走 ①，否则退回 ②，并且点了之后一定给出文字反馈，不让用户以为没反应。 */
+  function saveButton(blob) {
+    const wrap = el("div", "sh-actions");
+    const tip = el("p", "kd-hint");
+    const file = typeof File === "function" ? new File([blob], "我的星图.png", { type: "image/png" }) : null;
+    const canShareFile = !!(file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
+
+    if (canShareFile) {
+      const btn = el("button", "kd-btn primary", "保存到相册 / 分享");
+      btn.type = "button";
+      btn.addEventListener("click", () => {
+        navigator.share({ files: [file] }).then(
+          () => { tip.textContent = "✓ 完成。存到相册的话，去相册里找"; },
+          err => {
+            /* 用户自己关掉分享面板不算失败 */
+            if (err && err.name === "AbortError") return;
+            tip.textContent = "这个浏览器打不开分享面板，请长按上面的图片保存";
+          });
+      });
+      wrap.appendChild(btn);
+    }
+
+    const url = URL.createObjectURL(blob);
+    const dl = el("a", "kd-btn" + (canShareFile ? "" : " primary"), "下载图片");
+    dl.href = url;
+    dl.download = "我的星图.png";
+    dl.addEventListener("click", () => {
+      tip.textContent = "已开始下载：电脑在浏览器的下载列表里；手机通常在「文件 / 下载」里，不在相册。没反应的话请长按图片保存";
+    });
+    wrap.appendChild(dl);
+
+    const box = el("div");
+    box.appendChild(wrap);
+    box.appendChild(tip);
+    return box;
   }
 
   function fallbackCopy(input, done) {
@@ -247,7 +285,11 @@
       g.font = "26px " + MONO;
       g.fillText(location.host + location.pathname.replace(/\/$/, ""), PAD, H - 40);
 
-      return canvas.toDataURL("image/png");
+      const dataUrl = canvas.toDataURL("image/png");
+      /* 分享和下载用 Blob：比几 MB 的 data: 地址可靠，手机浏览器常对超长 data: 下载直接没反应 */
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve({ dataUrl: dataUrl, blob: blob }) : reject(new Error("toBlob failed")), "image/png");
+      });
     });
   }
 
