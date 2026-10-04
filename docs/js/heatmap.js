@@ -2,7 +2,8 @@
 (function () {
   "use strict";
 
-  const USER = "XingZengJi";
+  /* 用户名取自 index.html 的 <meta name="github-user">，fork 后只改那一处 */
+  const USER = document.querySelector('meta[name="github-user"]').content;
   const API = "https://github-contributions-api.jogruber.de/v4/" + USER + "?y=last";
   /* GitHub 深色模式官方序列色带（亮度单调递增） */
   const RAMP = ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"];
