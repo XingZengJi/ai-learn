@@ -31,7 +31,7 @@
 1. **Fork** 本仓库
 2. 仓库 **Settings → Pages**，Source 选 `Deploy from a branch`，分支选 `main`、目录选 `/docs`，保存后几分钟就能在 `https://<你的用户名>.github.io/ai-learn/` 打开
 3. 改 [`docs/index.html`](docs/index.html) 里的几处个人信息：
-   - `<meta name="github-user">` 改成你的 GitHub 用户名（热力图读它）
+   - `<meta name="github-user">` 改成你的 GitHub 用户名（热力图读它。热力图数据来自第三方公开接口 `github-contributions-api.jogruber.de`，接口不可用时只是热力图不显示，地图照常能用）
    - `og:url`、`og:image` 两个分享卡片地址
    - 页脚的仓库链接
 4. **清空进度**：把 [`docs/data/anthropic/progress.json`](docs/data/anthropic/progress.json) 和 [`docs/data/openai/progress.json`](docs/data/openai/progress.json) 里的 `courses`、`knowledge`、`projects` 都改成 `{}`
@@ -55,6 +55,7 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 | `notes/` | 学习笔记（费曼输出法） |
 | `practice/` | 实战项目的方案、需求与复盘 |
 | `tools/` | 数据校验 `check-data.py`、网页冒烟测试 `e2e.js` |
+| `LICENSE` / `LICENSE-CONTENT.md` | 代码与内容的许可，见下方「许可」 |
 
 ## 关于课程笔记
 
@@ -65,3 +66,12 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 - **OpenAI Academy 课程**（`Course/Codex/`）：作者自写的学习笔记，不是课件译述
 
 成就地图里的知识点概要和测验题是作者自己写的，不是课程原文。课程内容的版权归原作者所有，本仓库与 Anthropic、OpenAI 无隶属关系。
+
+## 许可
+
+- **代码**（`docs/` 的网页代码、`tools/`）：[MIT](LICENSE)，随便用
+- **内容**（课程笔记、题库与知识点数据、学习计划等）：[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)，署名、非商业、相同方式共享
+
+具体哪些文件属于哪一类，见 [`LICENSE-CONTENT.md`](LICENSE-CONTENT.md)。Fork 来换成你自己的课程体系，只用代码部分，不受内容许可的限制。
+
+发现题目或笔记有错，欢迎[提 Issue](https://github.com/XingZengJi/ai-learn/issues)。
