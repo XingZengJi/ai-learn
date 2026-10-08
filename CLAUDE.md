@@ -40,6 +40,9 @@ grep -H "对应成就地图课程 ID" Course/*/*/README.md
 - **每个课程各自一套文件名前缀**，由该文件夹第一课确定后续沿用，不是全仓库统一格式（如 `ai-fluency-smb-NN-标题.md`、`mcp-N-标题.md`）。新建文件夹时先看有没有更贴近的现成前缀可沿用，没有再另起一个
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
 - **`Course/*/*/_source/` 已 gitignore** —— 英文原文抓取件仅本地留存供核对，不入公开仓库
+- **只有原课程开放了许可（CC BY-NC-SA 等）的笔记才能进公开仓**。2026-10 逐课核过原文：AI Fluency 系列 9 门有 CC 许可，可公开；其余 12 门（01、02、03、04、05、07、08、11、12、13、16、17）原文写着「All rights reserved」或根本没写许可，**已从公开仓和 Git 历史中移除**，文件夹仍在本地原位，靠 `.gitignore` 挡住。补题、复习照常读本地文件即可
+- **这 12 门的备份在私有仓 `XingZengJi/ai-learn-private-notes`**（本地克隆在 `~/workspace/projects/ai-learn-private-notes/`，目录结构与本仓相同）。本地改了这些笔记后要同步过去再提交推送，否则 VPS 上就是唯一一份：
+  `rsync -a --delete Course/Claude/<文件夹>/ ~/workspace/projects/ai-learn-private-notes/Course/Claude/<文件夹>/`
 - 每篇笔记开头有固定的引用块：课程名/课次/来源/许可。原课程多为 CC BY-NC-SA 4.0，**中文译述属改编作品，必须署名原作者并声明以同一许可提供**（各版 AI Fluency 课还需标注具体合作方，如 Teach For America、CodePath、AFT）
 
 ## practice/ 的约定：一个项目一个文件夹，本体建在仓外
@@ -145,6 +148,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 用户给 Skilljar 课程链接、要求存到某个文件夹时执行（仅 `Course/Claude/`；OpenAI Academy 课程不走这条，见上文 Course/ 约定）。
 
+0. **先核许可**：抓一课正文，拉到末尾找「Acknowledgments and license」。写着 CC BY-NC-SA 才走下面的公开流程；写着「All rights reserved」或找不到许可的，照常译述供自学，但文件夹名**先加进 `.gitignore`**、备份到私有仓（见上文 Course/ 约定），绝不提交进本仓。注意课程介绍页会内嵌别的课的数据，在介绍页上搜「license」会误判，必须看课次正文
 1. **取课次清单**：抓课程页（`https://anthropic.skilljar.com/<slug>`），课次链接在 `a.lesson-modular` 的 `href`；`li.section` / `.lesson-section` 是**章节标题不是课次**，别算进去。学习路径（`/path/<slug>`）下挂多门课，各自有独立 slug 与合作方，需分别抓
 2. **抓正文**：登录态是纯 cookie（`sj_sessionid`），`curl` 即可，无需浏览器。**正文容器是 `#lesson-main-content`**
 3. **译述**：中文译述而非逐句直译，保留原文的关键措辞与对比句；每篇补一节「对产品经理来说」，用 PM 语境解释这一课真正的抓手

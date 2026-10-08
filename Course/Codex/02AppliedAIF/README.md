@@ -46,7 +46,7 @@
 
 - **`c01` AI Foundations** —— 本课的前置。`c01` 讲怎么把一次对话问好，本课讲怎么把**反复发生的事**做成流程
 - **`c03` Agents and Workflows** —— 本课的延续。本课的工作流仍以你为执行主体，`c03` 把工作流交给 Agent 自主跑
-- **`Course/Claude/16AgentSkills/`（Anthropic `c04`）** —— 「把稳定流程固化成 Skill」这个想法两边都有，可对照着看**同一概念在两家产品里的不同形态**
+- **Introduction to Agent Skills（Anthropic `c04`，笔记未公开）** —— 「把稳定流程固化成 Skill」这个想法两边都有，可对照着看**同一概念在两家产品里的不同形态**
 
 ## 学完这门课之后要做的三件事
 

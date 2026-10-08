@@ -20,7 +20,7 @@
 
 **直接玩**：打开[在线地图](https://xingzengji.github.io/ai-learn/)，点任意一颗星开始答题。手机也能用。
 
-**看笔记**：每门课的中文学习笔记在 [`Course/`](Course/) 下，按厂商分 `Claude/` 和 `Codex/` 两层；完整学习路线见 [`学习计划.md`](学习计划.md)。
+**看笔记**：公开的中文学习笔记在 [`Course/`](Course/) 下，按厂商分 `Claude/` 和 `Codex/` 两层（哪些课公开、为什么见下方「关于课程笔记」）；完整学习路线见 [`学习计划.md`](学习计划.md)。
 
 **做一份你自己的地图**：见下方「Fork 指南」。
 
@@ -50,7 +50,7 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 | 路径 | 内容 |
 |---|---|
 | `docs/` | 成就地图网页（GitHub Pages 直接发布），数据在 `docs/data/` |
-| `Course/` | 课程中文笔记，按厂商分 `Claude/`、`Codex/` |
+| `Course/` | 公开的课程中文笔记，按厂商分 `Claude/`、`Codex/` |
 | `学习计划.md` | 22 门 Anthropic 课的中文速览、10 周安排、进度追踪 |
 | `notes/` | 学习笔记（费曼输出法） |
 | `practice/` | 实战项目的方案、需求与复盘 |
@@ -58,4 +58,10 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 
 ## 关于课程笔记
 
-课程笔记是学习过程中的中文译述与自写笔记，每篇开头注明了原课程、来源和许可。原课程采用 CC BY-NC-SA 4.0 许可的，中文译述作为改编作品同样以 CC BY-NC-SA 4.0 提供，并署名原作者。课程内容的版权归原作者所有，本仓库与 Anthropic、OpenAI 无隶属关系。
+**只公开有权公开的笔记。** 地图上的每门课作者都学过，但笔记是否放进本仓库，取决于原课程的许可：
+
+- **AI Fluency 系列 9 门**（`Course/Claude/` 下现有的文件夹）：原课程以 CC BY-NC-SA 4.0 发布，中文译述作为改编作品同样以 CC BY-NC-SA 4.0 提供，每篇开头署名原作者并注明来源与许可
+- **其余 Anthropic 课程**（Claude 101、Claude Code、API、MCP、Agent Skills 等）：原课程保留全部版权、未开放许可，笔记只留在作者本地，不公开
+- **OpenAI Academy 课程**（`Course/Codex/`）：作者自写的学习笔记，不是课件译述
+
+成就地图里的知识点概要和测验题是作者自己写的，不是课程原文。课程内容的版权归原作者所有，本仓库与 Anthropic、OpenAI 无隶属关系。

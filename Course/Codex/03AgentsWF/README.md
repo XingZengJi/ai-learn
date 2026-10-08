@@ -42,9 +42,9 @@
 
 这门课和本仓库已有的 Anthropic 课程主题重合度最高，**对照着看能看出两家在同一问题上的不同答法**：
 
-- **`Course/Claude/17subagents/`（Anthropic `c05`）** —— 子智能体：隔离上下文里干活。和本课「派活」是同一思路的不同实现
-- **`Course/Claude/16AgentSkills/`（Anthropic `c04`）** —— Skills。本课 `k0306` 的「打包成可复用形式」在 Anthropic 侧有一整门课
-- **`Course/Claude/04Cowork/`（Anthropic `c03`）** —— Cowork。本课 `k0302`「Agent 干好活需要什么」里那条**「别把整个文档目录一股脑丢给它」**，正是 Cowork 课第 02 课点名的反面教材（「新手最容易犯的错是图省事把整个『文档』目录丢给它」，对应 Anthropic 侧 `k0301`/`k0302`）；`practice/p6-个人AI指挥台/` 的 FR-8 练的就是反着做
+- **Introduction to Subagents（Anthropic `c05`，笔记未公开）** —— 子智能体：隔离上下文里干活。和本课「派活」是同一思路的不同实现
+- **Introduction to Agent Skills（Anthropic `c04`，笔记未公开）** —— Skills。本课 `k0306` 的「打包成可复用形式」在 Anthropic 侧有一整门课
+- **Introduction to Claude Cowork（Anthropic `c03`，笔记未公开）** —— Cowork。本课 `k0302`「Agent 干好活需要什么」里那条**「别把整个文档目录一股脑丢给它」**，正是 Cowork 课第 02 课点名的反面教材（「新手最容易犯的错是图省事把整个『文档』目录丢给它」，对应 Anthropic 侧 `k0301`/`k0302`）；`practice/p6-个人AI指挥台/` 的 FR-8 练的就是反着做
 
 > 上面这条重合不是巧合：两家课程都在讲「委派」这件事。做笔记时**值得专门写一节对照**，
 > 比单独记任何一门都有价值。
