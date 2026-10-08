@@ -4,6 +4,9 @@ __pycache__/
 node_modules/
 .env
 
+# 本地专用的 Claude 指令：含抓取方法、本机素材路径，不公开
+CLAUDE.local.md
+
 # 课程英文原文抓取件：仅本地留存供核对翻译，不入公开仓库
 Course/*/*/_source/
 

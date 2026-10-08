@@ -263,6 +263,7 @@ body[data-view="shared"] .view-bar { background: rgba(42, 36, 18, 0.94); border-
   text-align: center; color: var(--ink-3); font-size: 13px;
   padding: 36px 16px 44px;
 }
+.footer-note { margin: 10px 0 0; font-size: 12px; opacity: .8; }
 
 /* ============ 知识点详情 / 测验弹窗 ============ */
 .k-modal {

@@ -35,7 +35,7 @@ grep -H "对应成就地图课程 ID" Course/*/*/README.md
 
 - **第一层是厂商**：`Course/Claude/`（Anthropic Skilljar 课程，原先直接摊在 `Course/` 下的 21 个文件夹已整体挪进来）、`Course/Codex/`（OpenAI Codex 课程）。新抓的课先判断归属哪个厂商，再在其下建课程文件夹；下面所有约定都作用在**课程文件夹**这一层
 - **`Course/Codex/` 的笔记挂在成就地图的 openai 厂商下**（`docs/data/openai/`），不新开第三个厂商。现有三个文件夹就是地图上已有的 `c01`–`c03`（映射见 `Course/Codex/README.md` 的课程表），以后新收的课才接着往下编号
-- **`Course/Codex/` 是自写学习笔记，不是译述**：OpenAI Academy 课次是 SCORM 互动课件、站内拿不到文字稿，且没有 CC 授权，不能把课件全文译述推进公开仓。每课照 `Course/Codex/笔记模板.md` 起头（引用块与 `Course/Claude/` 不同）；下文「抓取并译述一门新课」只适用于 `Course/Claude/`
+- **`Course/Codex/` 是自写学习笔记，不是译述**：OpenAI Academy 课次是 SCORM 互动课件、站内拿不到文字稿，且没有 CC 授权，不能把课件全文译述推进公开仓。每课照 `Course/Codex/笔记模板.md` 起头（引用块与 `Course/Claude/` 不同）；下文「收录一门新课」只适用于 `Course/Claude/`
 - **文件夹名 = 两位序号 + 简称**（如 `19AIF4SB`、`20AIforB`）。序号是学习/收录顺序，**不等于成就地图的课程 ID**（例如 `09FluforEdu` 对应 `c16`），也不保证唯一（`20AIforB` 与 `20AIforPK12` 同号）。两套编号的映射写在各文件夹 README 的「对应成就地图课程 ID」一行
 - **每个课程各自一套文件名前缀**，由该文件夹第一课确定后续沿用，不是全仓库统一格式（如 `ai-fluency-smb-NN-标题.md`、`mcp-N-标题.md`）。新建文件夹时先看有没有更贴近的现成前缀可沿用，没有再另起一个
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
@@ -144,20 +144,11 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 另外：**整题重写时必须重新确定 `answer`**，沿用旧下标会把正确答案指到别的选项上（这个坑真踩过）。跨课程也要查重——`c11`/`c14`/`c15` 是同一套课程内容的三个平台版本，`c06` 与各行业定制版 AI 素养课同源，最容易出现几乎逐字相同的题。
 
-## 工作流：抓取并译述一门新课
+## 工作流：收录一门新课
 
-用户给 Skilljar 课程链接、要求存到某个文件夹时执行（仅 `Course/Claude/`；OpenAI Academy 课程不走这条，见上文 Course/ 约定）。
+用户给课程链接、要求收进 `Course/Claude/` 时执行。抓取与译述的具体步骤在本地的 `CLAUDE.local.md`（不入库，Claude Code 会自动读取）。公开仓只需守住一条：
 
-0. **先核许可**：抓一课正文，拉到末尾找「Acknowledgments and license」。写着 CC BY-NC-SA 才走下面的公开流程；写着「All rights reserved」或找不到许可的，照常译述供自学，但文件夹名**先加进 `.gitignore`**、备份到私有仓（见上文 Course/ 约定），绝不提交进本仓。注意课程介绍页会内嵌别的课的数据，在介绍页上搜「license」会误判，必须看课次正文
-1. **取课次清单**：抓课程页（`https://anthropic.skilljar.com/<slug>`），课次链接在 `a.lesson-modular` 的 `href`；`li.section` / `.lesson-section` 是**章节标题不是课次**，别算进去。学习路径（`/path/<slug>`）下挂多门课，各自有独立 slug 与合作方，需分别抓
-2. **抓正文**：登录态是纯 cookie（`sj_sessionid`），`curl` 即可，无需浏览器。**正文容器是 `#lesson-main-content`**
-3. **译述**：中文译述而非逐句直译，保留原文的关键措辞与对比句；每篇补一节「对产品经理来说」，用 PM 语境解释这一课真正的抓手
-4. 写 `README.md`（见上文 Course/ 约定），英文抓取件存 `_source/`
-
-**两类拿不到的内容，如实在笔记里标注，不要编补**：
-
-- **视频没有站内文字稿** —— 页面正文通常只有本课目标 / 核心要点 / 练习 / 反思。部分课程会提示可在 YouTube 上开字幕（视频页 "Show transcript"）
-- **交互式课次是浏览器端渲染的** —— 常规提取会得到空内容（不是抓取失败）。内容在页面内联 `<script>` 的数据结构里，可从中取出结构与条目；工作坊幻灯片/手册这类资产则只能记录「它是什么、怎么用」，建议用户回站点亲手看
+- **先核许可再决定公不公开**：看课次正文末尾的「Acknowledgments and license」。写着 CC BY-NC-SA 的才能提交进本仓，并按上文 Course/ 约定写引用块和 README；写着「All rights reserved」或没写许可的，文件夹名先加进 `.gitignore`、备份到私有仓，绝不提交
 
 ## 中文文件名与 git
 
