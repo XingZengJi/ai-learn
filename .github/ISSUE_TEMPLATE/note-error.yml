@@ -1,0 +1,26 @@
+name: 笔记纠错
+description: 课程笔记里有翻译错误、事实错误或链接失效
+title: "[笔记纠错] "
+labels: ["documentation"]
+body:
+  - type: input
+    id: file
+    attributes:
+      label: 哪篇笔记
+      description: 文件路径或网页链接
+      placeholder: 例如：Course/Claude/06AIfluency/ai-fluency-foundations-01-导论.md
+    validations:
+      required: true
+  - type: textarea
+    id: original
+    attributes:
+      label: 有问题的原句
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: 应该怎么改，依据是什么
+      description: 有英文原文对照最好
+    validations:
+      required: true

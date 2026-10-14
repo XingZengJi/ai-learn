@@ -1,0 +1,53 @@
+name: 题目纠错
+description: 某道测验题的答案错了、题干有歧义、或干扰项其实也对
+title: "[题目纠错] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        谢谢帮忙挑错！填下面几项就够了，不需要懂代码。
+        选项每次打开都会乱序，所以请**直接复制选项文字**，不要写「第二个选项」。
+  - type: dropdown
+    id: provider
+    attributes:
+      label: 哪个版本
+      options:
+        - Anthropic 版（默认）
+        - OpenAI 版
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: 课程和知识点
+      description: 弹窗标题上的知识点名称，以及它属于哪门课
+      placeholder: 例如：Claude 101 / 认识 Claude 与首次对话
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: 题干
+      description: 把题目原文粘过来
+    validations:
+      required: true
+  - type: dropdown
+    id: problem
+    attributes:
+      label: 问题类型
+      options:
+        - 标准答案是错的
+        - 另一个选项也说得通（有两个正确答案）
+        - 题干或选项有歧义 / 错别字
+        - 解析（explain）写错了
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: 你认为应该是什么，依据是什么
+      description: 能附上课程原文链接或笔记位置最好
+    validations:
+      required: true

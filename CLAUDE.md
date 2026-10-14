@@ -41,8 +41,7 @@ grep -H "对应成就地图课程 ID" Course/*/*/README.md
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
 - **`Course/*/*/_source/` 已 gitignore** —— 英文原文抓取件仅本地留存供核对，不入公开仓库
 - **只有原课程开放了许可（CC BY-NC-SA 等）的笔记才能进公开仓**。2026-10 逐课核过原文：AI Fluency 系列 9 门有 CC 许可，可公开；其余 12 门（01、02、03、04、05、07、08、11、12、13、16、17）原文写着「All rights reserved」或根本没写许可，**已从公开仓和 Git 历史中移除**，文件夹仍在本地原位，靠 `.gitignore` 挡住。补题、复习照常读本地文件即可
-- **这 12 门的备份在私有仓 `XingZengJi/ai-learn-private-notes`**（本地克隆在 `~/workspace/projects/ai-learn-private-notes/`，目录结构与本仓相同）。本地改了这些笔记后要同步过去再提交推送，否则 VPS 上就是唯一一份：
-  `rsync -a --delete Course/Claude/<文件夹>/ ~/workspace/projects/ai-learn-private-notes/Course/Claude/<文件夹>/`
+- **这 12 门另有私有备份**，本地改了这些笔记后要同步过去，否则本机就是唯一一份。备份位置与同步命令见本地的 `CLAUDE.local.md`
 - 每篇笔记开头有固定的引用块：课程名/课次/来源/许可。原课程多为 CC BY-NC-SA 4.0，**中文译述属改编作品，必须署名原作者并声明以同一许可提供**（各版 AI Fluency 课还需标注具体合作方，如 Teach For America、CodePath、AFT）
 
 ## practice/ 的约定：一个项目一个文件夹，本体建在仓外

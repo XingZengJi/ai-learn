@@ -56,6 +56,7 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 | `practice/` | 实战项目的方案、需求与复盘 |
 | `tools/` | 数据校验 `check-data.py`、网页冒烟测试 `e2e.js` |
 | `LICENSE` / `LICENSE-CONTENT.md` | 代码与内容的许可，见下方「许可」 |
+| `CONTRIBUTING.md` / `.github/` | 怎么挑错、怎么提 PR；Issue 模板 |
 
 ## 关于课程笔记
 
@@ -74,4 +75,4 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 
 具体哪些文件属于哪一类，见 [`LICENSE-CONTENT.md`](LICENSE-CONTENT.md)。Fork 来换成你自己的课程体系，只用代码部分，不受内容许可的限制。
 
-发现题目或笔记有错，欢迎[提 Issue](https://github.com/XingZengJi/ai-learn/issues)。
+发现题目或笔记有错，欢迎[提 Issue](https://github.com/XingZengJi/ai-learn/issues/new/choose)，有现成模板，不需要懂代码。想直接提 PR，先看 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
