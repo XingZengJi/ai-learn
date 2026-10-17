@@ -12,6 +12,7 @@
 
 - **25 门课、201 个知识点、769 道测验题**：覆盖 [Anthropic Academy](https://anthropic.skilljar.com/) 的 22 门课和 [OpenAI Academy](https://academy.openai.com/) 的 3 门课，右上角一键切换（[OpenAI 版直达](https://xingzengji.github.io/ai-learn/?v=openai)）
 - **答对才能点亮**：点开任意一颗星，先看知识点概要，再做 3–4 道单选题，全对才能点亮。题目选项每次乱序，背位置没用
+- **实战项目自己认领**：「项目」页列出每个阶段的实战项目，做完后点「我完成了」，对应的行星就会亮起
 - **任何人都能玩**：访客的点亮记录存在自己的浏览器里，不需要注册，不影响别人
 - **分享我的星图**：一键生成专属链接，别人打开看到的就是你点亮的星空；也能生成一张竖版图片，发朋友圈、小红书
 - **学习足迹**：底部同步作者的 GitHub 贡献热力图，每次学完提交一次，热力图就多一格
@@ -34,8 +35,7 @@
    - `<meta name="github-user">` 改成你的 GitHub 用户名（热力图读它。热力图数据来自第三方公开接口 `github-contributions-api.jogruber.de`，接口不可用时只是热力图不显示，地图照常能用）
    - `og:url`、`og:image` 两个分享卡片地址
    - 页脚的仓库链接
-4. **清空进度**：把 [`docs/data/anthropic/progress.json`](docs/data/anthropic/progress.json) 和 [`docs/data/openai/progress.json`](docs/data/openai/progress.json) 里的 `courses`、`knowledge`、`projects` 都改成 `{}`
-5. **正式点亮**：学完一个知识点，在 `progress.json` 里加一条，例如 `"k0101": { "status": "done", "date": "2026-10-04" }`，提交推送后地图和热力图一起更新。用 [Claude Code](https://claude.com/claude-code) 的话，直接说「点亮 k0101」即可，流程写在 [`CLAUDE.md`](CLAUDE.md)
+4. **不需要清空进度**：地图上没有作者进度，每个人的点亮记录都只存在自己的浏览器里
 
 课程、知识点、题库分别在 `docs/data/<厂商>/` 下的 `courses.json`、`knowledge.json`、`quiz.json`，想换成别的课程体系也是改这几个文件。改完运行 `python3 tools/check-data.py` 校验数据。
 

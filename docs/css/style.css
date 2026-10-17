@@ -172,7 +172,7 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .chip.extra { border-style: dashed; color: var(--ink-3); }
 .project-status { font-family: var(--font-mono); font-size: 12px; margin-top: 8px; color: var(--ink-3); }
 .project-status.done { color: var(--t1); }
-.project-status.doing { color: var(--t2); }
+.project-toggle { margin-top: 10px; }
 
 /* ============ 列表视图 ============ */
 .list-root { max-width: 1150px; margin: 20px auto 40px; display: grid; gap: 28px; }
@@ -247,7 +247,6 @@ details.course-k summary .list-row { border-bottom: none; }
 .view-bar button.primary { border-color: var(--t2); background: rgba(57, 135, 229, 0.16); }
 .view-bar button.quiet { color: var(--ink-3); }
 /* 看别人的星图时视图条换成暖色，一眼看出「这不是我的」 */
-body[data-view="author"] .view-bar,
 body[data-view="shared"] .view-bar { background: rgba(42, 36, 18, 0.94); border-bottom-color: #5c4a1a; color: #ecd9a0; }
 
 .tooltip {

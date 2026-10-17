@@ -64,7 +64,7 @@
     foot.className = "kd-actions";
 
     if (ctx.readOnly) {
-      /* 看作者的 / 别人的星图时不能在这里答题，否则成绩记到谁头上说不清 */
+      /* 看别人分享的星图时不能在这里答题，否则成绩记到谁头上说不清 */
       const go = document.createElement("button");
       go.className = "kd-btn primary";
       go.type = "button";

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 学习者（产品经理出身、非技术背景）系统学习 Anthropic 官方 Skilljar 课程的公开学习仓库，不是常规代码项目。全部内容用中文写；解释技术概念时用非技术语言和 PM 类比。原则：**Claude 写代码，学习者读懂代码**——做任何技术改动时要顺带讲清楚"为什么"。
 
-- `学习计划.md` — 学习计划权威文档：全部课程速览、10 周安排、工程基础加油包、进度追踪表
+- `学习计划.md` — 学习计划权威文档：全部课程速览、10 周安排、工程基础加油包（作者个人进度不在本仓）
 - `docs/` — 「CC 学习成就地图」网页（GitHub Pages 站点，https://xingzengji.github.io/ai-learn/）
 - `Course/<厂商>/<NN课程名>/` — 课程笔记（中英对照/中文译述）。厂商层目前有 `Claude/`（Anthropic Skilljar 课程）与 `Codex/`（OpenAI Codex 课程）
 - `notes/` — 学习笔记（费曼输出法）
@@ -66,13 +66,11 @@ grep -H "对应成就地图课程 ID" Course/*/*/README.md
 
 ## 核心工作流：「点亮」
 
-用户学完一个知识点/课程/项目后会说「点亮 XX」。流程：
+用户学完一个知识点/课程/项目后会说「点亮 XX」（OpenAI 版会说「点亮 OpenAI 的 XX」）。
 
-1. 更新 `docs/data/anthropic/progress.json` —— 这是 Anthropic 版的**唯一权威进度文件**，只记录 `doing` / `done` 条目（含 `date`），未出现的一律视为 todo。若点亮的是 OpenAI 版内容（用户会说「点亮 OpenAI 的 XX」），改 `docs/data/openai/progress.json`
-2. 如涉及课程完成，同步更新 `学习计划.md` 第六节的进度追踪表（仅 Anthropic 课程）
-3. **提交并推送** —— 每次点亮本身就是一次 GitHub 贡献，地图底部热力图同步 +1
+**作者的个人进度不在本仓**：2026-10-17 起不公开，网页也不再读取或展示（原 `docs/data/<厂商>/progress.json` 与 `学习计划.md` 第六节的进度表已移出）。进度文件位置与提交方式见本地的 `CLAUDE.local.md`。**不要在本仓重建 `progress.json`，也不要为点亮在本仓提交。**
 
-ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`（如 `k0203` = c02 的第 3 个知识点），项目 `p1`–`p5`。**两个厂商各自一套同格式 ID，互不冲突**（数据目录、progress 文件、localStorage 键都按厂商隔离），用户没说厂商时默认 Anthropic。ID 与元数据定义在各厂商目录的 `courses.json`、`knowledge.json`、`projects.json` 中；progress.json 只引用这些 ID。
+ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`（如 `k0203` = c02 的第 3 个知识点），项目 `p<编号>`（编号 ≤ 52，分享链接按编号做位图，`check-data.py` 校验）。**两个厂商各自一套同格式 ID，互不冲突**（数据目录、localStorage 键都按厂商隔离），用户没说厂商时默认 Anthropic。ID 与元数据定义在各厂商目录的 `courses.json`、`knowledge.json`、`projects.json` 中。
 
 **地图上允许存在指向同一门课的重复条目**：`c12` 与 `c21` 都是 `ai-fluency-for-builders`（前者按官方目录写，后者按实际学完的笔记重写），这是用户明确选择保留的，不要当成 bug 去合并。
 
@@ -98,15 +96,15 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 纯静态站点，**无构建步骤、无依赖**，vanilla JS（IIFE 风格），GitHub Pages 直接从 main 分支的 `docs/` 目录发布——推送即上线。
 
-**双版本**：站点承载两套课程体系——Anthropic（默认）和 OpenAI Academy，右上角按钮切换。厂商解析顺序：URL `?v=openai` → localStorage `cc-map-provider` → 默认 anthropic。数据按厂商目录隔离：`data/anthropic/` 与 `data/openai/` 各有同构的 5 个 JSON。OpenAI 版的 localStorage 键带 `:openai` 后缀（`cc-map-preview:openai` 等），Anthropic 用无后缀键（兼容历史数据）。
+**双版本**：站点承载两套课程体系——Anthropic（默认）和 OpenAI Academy，右上角按钮切换。厂商解析顺序：URL `?v=openai` → localStorage `cc-map-provider` → 默认 anthropic。数据按厂商目录隔离：`data/anthropic/` 与 `data/openai/` 各有同构的 4 个 JSON（`courses` / `knowledge` / `projects` / `quiz`）。OpenAI 版的 localStorage 键带 `:openai` 后缀（`cc-map-preview:openai` 等），Anthropic 用无后缀键（兼容历史数据）。
 
-- `js/app.js` — 主逻辑：顶部 `PROVIDERS` 配置（数据目录、眉题、页脚链接、存储后缀），按厂商并行加载 5 个 JSON，渲染课程/项目列表。**三种星图互不混合**，由网址 `#` 决定：
-  - **我的星图**（默认）：访客在本浏览器答题点亮的记录，localStorage key `cc-map-preview[:openai]`（键名沿用早期「预览点亮」叫法，改名会丢访客已有记录）
-  - **作者的星图**（`#author`）：`progress.json` 的正式进度，只读
-  - **别人分享的星图**（`#s=<编码>&n=<昵称>`）：只读，编码规则见 `js/share.js` 顶部注释
-  - 项目（行星）是作者的实战项目，三种视图下都显示 `progress.json` 的项目进度
-- `js/share.js` — 分享链接编解码 + 分享弹窗（复制链接 / 生成图片）。**链接按「课程号 → 知识点序号位图」编码，删除或重新编号已有知识点会让旧链接错位**；新增知识点不受影响
-- `js/quiz.js` — 知识点详情弹窗 + 测验：点击星星/列表项打开详情（概要 + 测验按钮）。**有题必考、无题可直点**——quiz.json 里 `questions` 非空的知识点必须测验全对才能点亮（通过记录存 `cc-map-quiz-passed[:openai]`，「清空」不清它）；`questions` 为空或无条目的知识点显示概要/占位 + 「直接点亮」按钮。在作者的 / 别人分享的星图里弹窗只读，只给「去我的星图测验」。**现状：两个厂商的知识点已全部有题**（Anthropic 175 个、OpenAI 26 个），那条「直接点亮」分支已无真实数据覆盖——但它仍是活代码（新增知识点尚未出题时会走到），别当死代码删掉
+- `js/app.js` — 主逻辑：顶部 `PROVIDERS` 配置（数据目录、眉题、页脚链接、存储后缀），按厂商并行加载 4 个 JSON，渲染课程/项目列表。**两种星图互不混合**，由网址 `#` 决定：
+  - **我的星图**（默认）：访客在本浏览器点亮的记录（星星 `knowledge:k0101: true`、行星 `projects:p6: "<完成日期>"` 存在同一个对象里），localStorage key `cc-map-preview[:openai]`（键名沿用早期「预览点亮」叫法，改名会丢访客已有记录）
+  - **别人分享的星图**（`#s=<编码>&p=<项目>&n=<昵称>`）：只读，编码规则见 `js/share.js` 的注释
+  - 「作者的星图」（`#author`）已按用户要求下线：入口按钮和路由都删了，旧链接自动退回「我的星图」。不要加回来
+  - 项目（行星）和星星一样归访客自己：网页没法检查项目做没做完，所以由访客在项目卡上点「我完成了」/「撤销完成」，用户明确选了这种自助方式。`projects.json` 的文案要写成给所有学习者的任务说明，不要写成作者自己的口吻或指向作者私有的路径
+- `js/share.js` — 分享链接编解码 + 分享弹窗（复制链接 / 生成图片）。**链接按「课程号 → 知识点序号位图」编码，行星单独放 `&p=`（项目编号位图），删除或重新编号已有知识点/项目会让旧链接错位**；新增不受影响
+- `js/quiz.js` — 知识点详情弹窗 + 测验：点击星星/列表项打开详情（概要 + 测验按钮）。**有题必考、无题可直点**——quiz.json 里 `questions` 非空的知识点必须测验全对才能点亮（通过记录存 `cc-map-quiz-passed[:openai]`，「清空」不清它）；`questions` 为空或无条目的知识点显示概要/占位 + 「直接点亮」按钮。在别人分享的星图里弹窗只读，只给「去我的星图测验」。**现状：两个厂商的知识点已全部有题**（Anthropic 175 个、OpenAI 26 个），那条「直接点亮」分支已无真实数据覆盖——但它仍是活代码（新增知识点尚未出题时会走到），别当死代码删掉
 - 全对撒花：通过时先把知识点 id 记进 `pendingCelebrate`，**等弹窗关闭后**才在那颗星周围迸发纸屑（弹窗开着时撒等于被盖住）。定位靠 starmap 给每个星星组打的 `data-k` 属性——这是 `starmap.js` 与 `quiz.js` 之间的隐式契约，改星星渲染时别把它弄丢
 - `js/starmap.js` — SVG 星图：知识点=星星，课程=星座，用课程 ID 做种子的伪随机布局保证每次渲染一致；整座点亮加光环与 ✦ 徽记。**天区/槽位/viewBox 全部来自各厂商 courses.json 的 `layout` 字段**，星图代码不含任何厂商假设（星座大小与布局间距的换算见上文）
 - `js/heatmap.js` — GitHub 贡献热力图：客户端直接请求 `github-contributions-api.jogruber.de` 公开 API，SVG 自绘；两个版本共享
@@ -117,7 +115,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 **默认用文本编辑（Edit 工具）逐处改，不要用 `json.dump` 整体写回。** 两类文件的排版不一样，混淆会炸出巨大 diff：
 
-- `courses.json` / `knowledge.json` / `projects.json` / `progress.json` —— **手写的紧凑单行格式**（`{ "id": "c20", ... },` 一行一条、`"3": [[200, 1030], [600, 1030], ...]`）。`json.dump` 会把每个元素拆成多行，两行的改动会变成 800+ 行 diff
+- `courses.json` / `knowledge.json` / `projects.json` —— **手写的紧凑单行格式**（`{ "id": "c20", ... },` 一行一条、`"3": [[200, 1030], [600, 1030], ...]`）。`json.dump` 会把每个元素拆成多行，两行的改动会变成 800+ 行 diff
 - `quiz.json` —— 2 空格缩进的常规 pretty JSON，但**短 `options` 数组是压在一行**的，整体 `json.dump` 同样会把它们全部拆开
 
 批量补题（一次改几十个知识点）时逐处 Edit 不现实，可以写脚本，但必须**按顶层 key 把 quiz.json 切成文本块、只替换/插入本次改动的块，已有块原样保留**；脚本先做一次「读进来再原样吐出，与磁盘逐字节比对」的保真自检，通过了才允许写入。这样几百条新增也只产生真正改动的 diff。
@@ -160,4 +158,4 @@ git -c core.quotepath=false ls-files Course/
 
 ## 提交约定
 
-提交信息用中文，简述做了什么（参考 git log 已有风格）。用户明确要求或点亮流程触发时才提交推送。
+提交信息用中文，简述做了什么（参考 git log 已有风格）。用户明确要求时才提交推送（点亮不再在本仓提交，见上文「点亮」）。

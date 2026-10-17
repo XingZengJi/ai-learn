@@ -12,7 +12,7 @@
 ## 哪些是内容（CC BY-NC-SA 4.0）
 
 - `Course/` 下的课程笔记
-- `docs/data/` 下的课程、知识点、项目、题库数据（`courses.json`、`knowledge.json`、`projects.json`、`quiz.json`；`progress.json` 是作者个人进度，Fork 后请清空）
+- `docs/data/` 下的课程、知识点、项目、题库数据（`courses.json`、`knowledge.json`、`projects.json`、`quiz.json`）
 - `docs/og-image.png`
 - `学习计划.md`、`notes/`、`practice/`
 

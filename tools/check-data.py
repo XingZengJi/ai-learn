@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""校验 docs/data/<厂商>/ 下 5 个 JSON 的结构与交叉引用（纯标准库）。补完数据后必跑：python3 tools/check-data.py"""
+"""校验 docs/data/<厂商>/ 下 4 个 JSON 的结构与交叉引用（纯标准库）。补完数据后必跑：python3 tools/check-data.py"""
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -15,14 +16,14 @@ def check_provider(data_dir):
         print("  ✗", msg)
 
     files = {}
-    for name in ["courses", "knowledge", "projects", "progress", "quiz"]:
+    for name in ["courses", "knowledge", "projects", "quiz"]:
         p = data_dir / (name + ".json")
         try:
             files[name] = json.loads(p.read_text())
         except Exception as e:
             print("  ✗", p.name, "解析失败:", e)
             return 1
-    print("  ✓ 5 个 JSON 全部合法")
+    print("  ✓ 4 个 JSON 全部合法")
 
     course_ids = {c["id"] for c in files["courses"]["courses"]}
     kids = {k["id"] for k in files["knowledge"]["knowledge"]}
@@ -58,13 +59,10 @@ def check_provider(data_dir):
             if kid not in kids:
                 fail(f'project {p["id"]} 的 covers 引用了不存在的知识点 {kid}')
 
-    # progress 只允许 doing/done，且 ID 必须存在
-    for typ, pool in [("courses", course_ids), ("knowledge", kids), ("projects", pids)]:
-        for _id, v in files["progress"].get(typ, {}).items():
-            if _id not in pool:
-                fail(f"progress.{typ} 引用了不存在的 {_id}")
-            if v.get("status") not in ("doing", "done"):
-                fail(f"progress.{typ}.{_id} 的 status 非法: {v.get('status')!r}")
+    # 项目 id 必须是 p + 数字（≤ 52）：分享链接按项目编号做位图编码，见 share.js 的 encodeProjects
+    for pid in pids:
+        if not re.fullmatch(r"p\d{1,2}", pid) or int(pid[1:]) > 52:
+            fail(f"project id {pid} 不符合 p<1–52> 格式，分享链接编不进去")
 
     # quiz：summary 非空；questions 允许为空数组（题库待补充）；有题则每题 4 选项、answer 合法、有题干和解析
     n_questions = 0

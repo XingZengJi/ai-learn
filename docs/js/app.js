@@ -1,4 +1,4 @@
-/* 应用主逻辑：数据加载、三种星图（我的 / 作者的 / 别人分享的）、三视图渲染、厂商双版本切换 */
+/* 应用主逻辑：数据加载、两种星图（我的 / 别人分享的）、三视图渲染、厂商双版本切换 */
 (function () {
   "use strict";
 
@@ -46,33 +46,28 @@
     return (state.data.tiers[t] || {}).colorHex || "#3987e5";
   }
 
-  /* 三种星图互不混合：
-   *   mine   我的星图：本浏览器里答题点亮的记录（localStorage），访客默认看到的就是它
-   *   author 作者的星图：progress.json 里的正式进度（网址 #author）
+  /* 两种星图互不混合：
+   *   mine   我的星图：本浏览器里的点亮记录（localStorage），访客默认看到的就是它
    *   shared 别人分享的星图：网址 #s= 里解出来的点亮记录，只读
-   * 项目（行星）是作者的实战项目，访客做不了，所以三种视图下都显示作者的项目进度。 */
+   * 星星靠答题点亮；行星（实战项目）没法在网页里检查，由访客自己标记完成，值存完成日期。 */
   const state = {
     data: null,
-    progress: null,
     view: "mine",
-    shared: null, /* { name, lit: { "knowledge:k0101": true } } */
+    shared: null, /* { name, lit: { "knowledge:k0101": true, "projects:p6": true } } */
     notice: "",   /* 分享链接解不开时的一次性提示 */
     preview: loadPreview(),
     passed: loadPassed(), /* 测验通过记录 { k0101: "2026-07-11" }，「清空」不清它 */
     statusOf(type, id) {
-      if (type === "projects" || this.view === "author") {
-        const auth = (this.progress[type] || {})[id];
-        return auth && (auth.status === "done" || auth.status === "doing") ? auth.status : "todo";
-      }
       const lit = this.view === "shared" ? this.shared.lit : this.preview;
       return lit[type + ":" + id] ? "done" : "todo";
     },
     dateOf(type, id) {
-      if (type === "projects" || this.view === "author") {
-        const auth = (this.progress[type] || {})[id];
-        return auth ? auth.date : null;
+      if (this.view !== "mine") return null;
+      if (type === "projects") {
+        const v = this.preview["projects:" + id];
+        return typeof v === "string" ? v : null;
       }
-      return this.view === "mine" && type === "knowledge" ? this.passed[id] || null : null;
+      return this.passed[id] || null;
     }
   };
 
@@ -81,12 +76,11 @@
     const v = Share.parseHash(location.hash);
     state.shared = null;
     state.notice = "";
-    if (v.type === "author") {
-      state.view = "author";
-    } else if (v.type === "shared") {
+    if (v.type === "shared") {
       state.view = "shared";
       const lit = {};
       v.kids.forEach(kid => { if (state.data.kById[kid]) lit["knowledge:" + kid] = true; });
+      v.pids.forEach(pid => { if (state.data.projects.some(p => p.id === pid)) lit["projects:" + pid] = true; });
       state.shared = { name: v.name, lit: lit };
     } else {
       state.view = "mine";
@@ -120,8 +114,8 @@
   }
 
   async function loadData() {
-    const [courses, knowledge, projects, progress, quiz] = await Promise.all(
-      ["courses.json", "knowledge.json", "projects.json", "progress.json", "quiz.json"]
+    const [courses, knowledge, projects, quiz] = await Promise.all(
+      ["courses.json", "knowledge.json", "projects.json", "quiz.json"]
         .map(f => P.dataDir + f)
         .map(u => fetch(u).then(r => {
           if (!r.ok) throw new Error(u + " → HTTP " + r.status);
@@ -142,7 +136,6 @@
       quiz: quiz,
       kById: Object.fromEntries(knowledge.knowledge.map(k => [k.id, k]))
     };
-    state.progress = progress;
     /* 梯队色的唯一数据源是 courses.json，同步到 CSS 变量，页面 chrome 与星图保持一致 */
     Object.keys(state.data.tiers).forEach(t => {
       document.documentElement.style.setProperty("--t" + t, state.data.tiers[t].colorHex);
@@ -151,12 +144,9 @@
 
   /* ---------- 课程/项目完成的推导 ---------- */
   function courseStatus(course) {
-    /* 课程级的手写状态只属于作者的星图，其余视图完全由知识点推导 */
-    const auth = state.view === "author" ? (state.progress.courses || {})[course.id] : null;
-    if (auth && auth.status === "done") return "done";
+    /* 课程状态完全由知识点推导 */
     const ks = state.data.knowledgeByCourse[course.id] || [];
     if (ks.length && ks.every(k => state.statusOf("knowledge", k.id) === "done")) return "done";
-    if (auth && auth.status === "doing") return "doing";
     if (ks.some(k => state.statusOf("knowledge", k.id) !== "todo")) return "doing";
     return "todo";
   }
@@ -164,14 +154,9 @@
   /* ---------- 顶部统计 ---------- */
   function renderStats() {
     const s = countStats();
-    const doneProjects = state.data.projects.filter(p => state.statusOf("projects", p.id) === "done").length;
     document.getElementById("stat-stars").textContent = s.stars + " / " + s.totalStars + " 颗星已点亮";
     document.getElementById("stat-courses").textContent = s.courses + " / " + s.totalCourses + " 门课完成";
-    document.getElementById("stat-projects").textContent = doneProjects + " / " + state.data.projects.length + " 个项目达成";
-    /* 项目是作者的，只在作者的星图里计入统计行 */
-    const showProjects = state.view === "author";
-    document.getElementById("stat-projects").hidden = !showProjects;
-    document.getElementById("stat-projects-sep").hidden = !showProjects;
+    document.getElementById("stat-projects").textContent = s.projects + " / " + s.totalProjects + " 个项目达成";
   }
 
   function countStats() {
@@ -179,7 +164,9 @@
       stars: state.data.knowledge.filter(k => state.statusOf("knowledge", k.id) === "done").length,
       totalStars: state.data.knowledge.length,
       courses: state.data.courses.filter(c => courseStatus(c) === "done").length,
-      totalCourses: state.data.courses.length
+      totalCourses: state.data.courses.length,
+      projects: state.data.projects.filter(p => state.statusOf("projects", p.id) === "done").length,
+      totalProjects: state.data.projects.length
     };
   }
 
@@ -197,22 +184,20 @@
     const text = document.getElementById("view-bar-text");
     const actions = document.getElementById("view-bar-actions");
     actions.textContent = "";
-    const n = countStats().stars;
+    const s = countStats();
+    const n = s.stars;
 
-    if (state.view === "author") {
-      text.textContent = "你在看作者的星图（正式学习进度）";
-      actions.appendChild(barButton("回到我的星图", "primary", () => goView("")));
-    } else if (state.view === "shared") {
+    if (state.view === "shared") {
       text.textContent = "你在看「" + (state.shared.name || "一位学习者") + "」分享的星图 · 已点亮 " + n + " 颗";
       actions.appendChild(barButton("开始点亮我自己的", "primary", () => goView("")));
     } else {
       text.textContent = state.notice ||
         (n ? "我的星图 · 已点亮 " + n + " 颗，记录保存在这个浏览器里"
            : "点任意一颗星，答对测验就能点亮它 · 记录只保存在这个浏览器里");
-      if (n) actions.appendChild(barButton("分享我的星图", "primary", openShare));
-      actions.appendChild(barButton("看作者的星图", "", () => goView("#author")));
-      if (n) {
-        /* 清空要点两次，防手滑；passed 记录保留，重新点亮仍需答题 */
+      const any = n + s.projects > 0;
+      if (any) actions.appendChild(barButton("分享我的星图", "primary", openShare));
+      if (any) {
+        /* 清空要点两次，防手滑；星星和行星一起清，passed 记录保留，重新点亮仍需答题 */
         const clear = barButton("清空", "quiet", () => {
           if (clear.dataset.armed) {
             state.preview = {};
@@ -234,6 +219,7 @@
     Share.open({
       provider: provider,
       kids: state.data.knowledge.filter(k => state.preview["knowledge:" + k.id]).map(k => k.id),
+      pids: state.data.projects.filter(p => state.preview["projects:" + p.id]).map(p => p.id),
       stats: countStats(),
       siteTitle: P.title,
       eyebrow: P.eyebrow,
@@ -258,7 +244,7 @@
       color: tierColor(course.tier),
       quiz: state.data.quiz[k.id] || null,
       state: state,
-      /* 作者的 / 别人的星图只读：测验要回自己的星图做 */
+      /* 别人的星图只读：测验要回自己的星图做 */
       readOnly: state.view !== "mine",
       onGoMine: () => { goView(""); openKnowledge(k); },
       passedDate: () => state.passed[k.id] || null,
@@ -291,6 +277,15 @@
   }
 
   /* ---------- 项目视图 ---------- */
+  /* 项目做没做完网页查不了，由访客自己标记；值存当天日期，方便卡片上显示「已达成 · 日期」 */
+  function toggleProject(pid) {
+    const key = "projects:" + pid;
+    if (state.preview[key]) delete state.preview[key];
+    else state.preview[key] = new Date().toISOString().slice(0, 10);
+    savePreview();
+    renderAll();
+  }
+
   function renderProjects() {
     const track = document.getElementById("projects-track");
     track.textContent = "";
@@ -331,7 +326,15 @@
         '<div class="chips">' + covers + extras + "</div>" +
         '<p class="project-status ' + st + '">' +
         ({ done: "✦ 已达成" + (state.dateOf("projects", p.id) ? " · " + state.dateOf("projects", p.id) : ""),
-           doing: "◐ 进行中", preview: "◌ 预览", todo: "○ 待启程" })[st] + "</p>";
+           todo: "○ 待启程" })[st] + "</p>";
+      if (state.view === "mine") {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "kd-btn project-toggle" + (st === "done" ? "" : " primary");
+        btn.textContent = st === "done" ? "撤销完成" : "我完成了";
+        btn.addEventListener("click", () => toggleProject(p.id));
+        body.appendChild(btn);
+      }
 
       card.appendChild(planetWrap);
       card.appendChild(body);
@@ -388,7 +391,7 @@
     /* 项目 */
     const secProj = document.createElement("section");
     secProj.className = "list-section";
-    secProj.innerHTML = "<h2>作者的实战项目 · 行星</h2>";
+    secProj.innerHTML = "<h2>实战项目 · 行星</h2>";
     state.data.projects.forEach(p => {
       const st = state.statusOf("projects", p.id);
       const row = document.createElement("div");

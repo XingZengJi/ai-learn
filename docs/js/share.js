@@ -44,21 +44,45 @@
     return kids;
   }
 
-  /* 读网址 # 后面：#author → 作者的星图；#s=<编码>&n=<昵称> → 别人分享的星图；其余 → 我的星图 */
+  /* 行星（项目）单独放在 &p= 里：项目编号 → 位图，36 进制。p6 = 2⁶ → "1s"。
+   * 不塞进 s= 的分段里，是因为课程段的格式「36 进制课程号-位图」认不出项目；
+   * 分开放，旧链接（没有 p=）照样能解，解不开的 p= 直接忽略，不影响星星。 */
+  function encodeProjects(pids) {
+    let mask = 0;
+    pids.forEach(pid => {
+      const m = /^p(\d{1,2})$/.exec(pid);
+      if (m && +m[1] <= MAX_SEQ) mask += Math.pow(2, +m[1]);
+    });
+    return mask ? mask.toString(36) : "";
+  }
+
+  function decodeProjects(code) {
+    if (!/^[0-9a-z]{1,11}$/.test(code || "")) return [];
+    const pids = [];
+    let mask = parseInt(code, 36);
+    for (let n = 0; mask > 0 && n <= MAX_SEQ; n++) {
+      if (mask % 2 === 1) pids.push("p" + n);
+      mask = Math.floor(mask / 2);
+    }
+    return pids;
+  }
+
+  /* 读网址 # 后面：#s=<编码>&p=<项目>&n=<昵称> → 别人分享的星图；其余（含已下线的 #author）→ 我的星图 */
   function parseHash(hash) {
     const h = String(hash || "").replace(/^#/, "");
-    if (h === "author") return { type: "author" };
     if (!h.startsWith("s=")) return { type: "mine" };
     const params = new URLSearchParams(h);
     const kids = decode(params.get("s"));
     if (!kids) return { type: "invalid" };
-    return { type: "shared", kids: kids, name: (params.get("n") || "").slice(0, 20) };
+    return { type: "shared", kids: kids, pids: decodeProjects(params.get("p")), name: (params.get("n") || "").slice(0, 20) };
   }
 
-  function buildLink(provider, kids, name) {
+  function buildLink(provider, kids, name, pids) {
     const base = location.origin + location.pathname;
     /* 厂商必须写进链接：打开者浏览器里记忆的厂商可能和分享者不同 */
     let hash = "#s=" + encode(kids);
+    const p = encodeProjects(pids || []);
+    if (p) hash += "&p=" + p;
     if (name) hash += "&n=" + encodeURIComponent(name);
     return base + "?v=" + provider + hash;
   }
@@ -82,7 +106,7 @@
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
   }
 
-  /* options: { provider, kids, stats: { stars, totalStars, courses, totalCourses }, siteTitle, eyebrow, svg } */
+  /* options: { provider, kids, pids, stats: { stars, totalStars, courses, totalCourses, projects, totalProjects }, siteTitle, eyebrow, svg } */
   function open(options) {
     if (!modal) initModal();
     ctx = options;
@@ -95,7 +119,8 @@
     head.appendChild(h2);
     head.appendChild(el("p", "kd-status done",
       "已点亮 " + ctx.stats.stars + " / " + ctx.stats.totalStars + " 颗星 · " +
-      ctx.stats.courses + " / " + ctx.stats.totalCourses + " 门课全座点亮"));
+      ctx.stats.courses + " / " + ctx.stats.totalCourses + " 门课全座点亮 · " +
+      ctx.stats.projects + " / " + ctx.stats.totalProjects + " 个项目达成"));
     body.appendChild(head);
 
     const nameRow = el("label", "sh-field");
@@ -131,7 +156,7 @@
     body.appendChild(imgArea);
 
     const name = () => nameInput.value.trim();
-    const refresh = () => { linkInput.value = buildLink(ctx.provider, ctx.kids, name()); };
+    const refresh = () => { linkInput.value = buildLink(ctx.provider, ctx.kids, name(), ctx.pids); };
     nameInput.addEventListener("input", () => {
       try { localStorage.setItem(NAME_KEY, name()); } catch (e) { /* 忽略 */ }
       refresh();
@@ -258,7 +283,7 @@
     return svgToImage(ctx.svg).then(({ img, w, h }) => {
       const W = 1080, PAD = 64;
       const mapW = W - 40, mapH = Math.round(h * mapW / w);
-      const TOP = 300, H = TOP + mapH + 150;
+      const TOP = 320, H = TOP + mapH + 150;
       const canvas = document.createElement("canvas");
       canvas.width = W; canvas.height = H;
       const g = canvas.getContext("2d");
@@ -283,6 +308,7 @@
       g.font = "32px " + FONT;
       g.fillText("已点亮 " + ctx.stats.stars + " / " + ctx.stats.totalStars + " 颗星  ·  " +
         ctx.stats.courses + " / " + ctx.stats.totalCourses + " 门课全座点亮", PAD, 240);
+      g.fillText(ctx.stats.projects + " / " + ctx.stats.totalProjects + " 个项目达成", PAD, 286);
 
       g.drawImage(img, 20, TOP, mapW, mapH);
 
@@ -301,5 +327,5 @@
     });
   }
 
-  window.Share = { encode: encode, decode: decode, parseHash: parseHash, buildLink: buildLink, open: open };
+  window.Share = { encode: encode, decode: decode, encodeProjects: encodeProjects, decodeProjects: decodeProjects, parseHash: parseHash, buildLink: buildLink, open: open };
 })();
