@@ -24,8 +24,9 @@ function readJSON(rel) {
 }
 
 /* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage；hash 形如 "#s=1.1"；
- * blockStorage 模拟浏览器禁用网站数据：一碰 localStorage 就抛 SecurityError */
-async function makePage(provider, hash, blockStorage) {
+ * opts.blockStorage 模拟浏览器禁用网站数据：一碰 localStorage 就抛 SecurityError
+ * opts.touch 模拟手机：matchMedia 报告触屏，星图元素按全图 1200×1780 的屏幕尺寸摆放（jsdom 自己不做布局） */
+async function makePage(provider, hash, opts = {}) {
   const virtualConsole = new VirtualConsole();
   virtualConsole.on("error", () => {}); /* jsdom 不支持导航跳转，静默这类噪音 */
   const dom = new JSDOM(html, {
@@ -34,7 +35,10 @@ async function makePage(provider, hash, blockStorage) {
   });
   const { window } = dom;
   if (provider) window.localStorage.setItem("cc-map-provider", provider);
-  if (blockStorage) {
+  if (opts.touch) {
+    window.matchMedia = q => ({ matches: /pointer: coarse|max-width: 640px/.test(q), addListener() {}, removeListener() {} });
+  }
+  if (opts.blockStorage) {
     Object.defineProperty(window, "localStorage", {
       get() { throw new window.DOMException("blocked in test", "SecurityError"); }
     });
@@ -49,6 +53,9 @@ async function makePage(provider, hash, blockStorage) {
     return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(fs.readFileSync(p, "utf8"))) });
   };
 
+  if (opts.touch) {
+    window.document.getElementById("starmap").getBoundingClientRect = () => ({ left: 0, top: 0, width: 1200, height: 1780 });
+  }
   for (const f of ["js/starmap.js", "js/quiz.js", "js/heatmap.js", "js/share.js", "js/app.js"]) {
     window.eval(fs.readFileSync(path.join(DOCS, f), "utf8"));
   }
@@ -273,12 +280,75 @@ async function makePage(provider, hash, blockStorage) {
     /<sales_records> 好过 <data>/.test(modalT.querySelector(".kq-explain").textContent));
 
   console.log("— 浏览器禁用存储时页面照常可用 —");
-  const winB = await makePage(null, "", true);
+  const winB = await makePage(null, "", { blockStorage: true });
   const docB = winB.document;
   check("星图照常渲染", docB.querySelectorAll("#starmap .star").length === knowledge.length);
   check("没有出现「数据加载失败」", !docB.querySelector("main").textContent.includes("数据加载失败"));
   docB.querySelector("#projects-track .project-toggle").click();
   check("点「我完成了」不报错，当前页面照样亮起", docB.getElementById("stat-projects").textContent.startsWith("1 / "));
+
+  console.log("— 手机：点星座 → 放大 → 点星星 —");
+  const winM = await makePage(null, "", { touch: true });
+  const docM = winM.document;
+  const svgM = docM.getElementById("starmap");
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  /* 在星图坐标 (sx, sy) 处点一下：按当前 viewBox 换算成屏幕坐标再派发 click */
+  const tapAt = (sx, sy) => {
+    const [x, y, w, h] = svgM.getAttribute("viewBox").split(" ").map(Number);
+    svgM.dispatchEvent(new winM.MouseEvent("click", { bubbles: true, clientX: (sx - x) / w * 1200, clientY: (sy - y) / h * 1780 }));
+  };
+  const starXY = kid => {
+    const c = svgM.querySelector('.star[data-k="' + kid + '"] circle.core');
+    return [+c.getAttribute("cx"), +c.getAttribute("cy")];
+  };
+  const fullBox = svgM.getAttribute("viewBox");
+  const zoomBar = docM.getElementById("zoom-bar");
+  const modalM = docM.getElementById("k-modal");
+  check("图例提示改成「点一个星座放大」", docM.getElementById("map-hint").textContent.includes("点一个星座放大"));
+  check("全图时没有放大栏", zoomBar.hidden);
+
+  const c02ks = knowledge.filter(k => k.course === "c02");
+  const [ax, ay] = starXY(c02ks[0].id);
+  tapAt(ax, ay);
+  check("全图上点星星不会直接弹出测验", modalM.hidden);
+  await wait(450);
+  const zBox = svgM.getAttribute("viewBox").split(" ").map(Number);
+  check("放大到 c02：viewBox 变小（" + zBox.map(Math.round).join(" ") + "）", zBox[2] < 400 && fullBox !== svgM.getAttribute("viewBox"));
+  check("放大后视野宽高比与全图一致（星图元素不跳动）", Math.abs(zBox[3] / zBox[2] - 1780 / 1200) < 0.01);
+  check("放大栏出现并显示课程名", !zoomBar.hidden &&
+    docM.getElementById("zoom-text").textContent.includes(readJSON("data/anthropic/courses.json").courses.find(c => c.id === "c02").cn));
+  check("其余星座淡化", svgM.classList.contains("zoomed") && svgM.querySelector('g[data-course="c02"]').classList.contains("focus"));
+
+  const [bx, by] = starXY(c02ks[1].id);
+  tapAt(bx + 6, by - 4);
+  check("第一次点星星只选中，不弹测验", modalM.hidden);
+  check("放大栏显示选中星星的名字", docM.getElementById("zoom-text").textContent.includes(c02ks[1].name));
+  check("选中的星星套上白环", !!svgM.querySelector('.star[data-k="' + c02ks[1].id + '"] .star-selected-ring'));
+  check("出现「打开」按钮", !docM.getElementById("zoom-open").hidden);
+  tapAt(bx, by);
+  check("再点同一颗：打开这颗星的详情", !modalM.hidden && modalM.querySelector("#k-modal-title").textContent === c02ks[1].name);
+  modalM.querySelector(".k-modal-close").click();
+  docM.getElementById("zoom-open").click();
+  check("点「打开」也能打开", !modalM.hidden && modalM.querySelector("#k-modal-title").textContent === c02ks[1].name);
+  modalM.querySelector(".k-modal-close").click();
+  check("关掉弹窗后仍停在放大视野", !zoomBar.hidden && svgM.getAttribute("viewBox") !== fullBox);
+  check("分享图片用的全图 viewBox 已记下", svgM.dataset.fullViewBox === fullBox);
+  docM.getElementById("zoom-next").click();
+  check("› 选中下一颗", docM.getElementById("zoom-text").textContent.includes(c02ks[2].name));
+  docM.getElementById("zoom-prev").click();
+  docM.getElementById("zoom-prev").click();
+  check("‹ 退回上一颗", docM.getElementById("zoom-text").textContent.includes(c02ks[0].name));
+  docM.getElementById("zoom-prev").click();
+  check("‹ 在第一颗时绕到最后一颗", docM.getElementById("zoom-text").textContent.includes(c02ks[c02ks.length - 1].name));
+
+  docM.getElementById("zoom-back").click();
+  await wait(450);
+  check("「← 全图」回到完整星图", svgM.getAttribute("viewBox") === fullBox && zoomBar.hidden);
+  check("回全图后选中状态清掉", !svgM.querySelector(".star-selected-ring"));
+
+  console.log("— 桌面端不受影响 —");
+  check("桌面端图例仍是「点击星星」", document.getElementById("map-hint").textContent.includes("点击星星"));
+  check("桌面端星图不挂整图点击判定", document.getElementById("starmap").onclick === null);
 
   console.log("— 解不开的分享链接 —");
   const winX = await makePage(null, "#s=garbage");

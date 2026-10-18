@@ -50,13 +50,21 @@
 
 <main>
   <section id="view-starmap" role="tabpanel" aria-labelledby="tab-starmap">
+    <!-- 触屏放大到某个星座时出现：返回全图 + 当前星座 / 选中星星的名字，由 app.js 填 -->
+    <div id="zoom-bar" class="zoom-bar" hidden>
+      <button id="zoom-back" type="button">← 全图</button>
+      <span id="zoom-text"></span>
+      <button id="zoom-prev" class="step" type="button" aria-label="上一颗星">‹</button>
+      <button id="zoom-next" class="step" type="button" aria-label="下一颗星">›</button>
+      <button id="zoom-open" class="primary" type="button" hidden>打开</button>
+    </div>
     <div class="starmap-wrap">
       <svg id="starmap" viewBox="0 0 1200 980" role="img" aria-label="课程星图：按三个梯队分区的知识点星座"></svg>
     </div>
     <p class="map-legend">
       <span class="lg"><span class="dot done t1"></span>已点亮</span>
       <span class="lg"><span class="dot todo"></span>未点亮</span>
-      <span class="lg hint">点击星星查看知识点，答对测验即可点亮</span>
+      <span class="lg hint" id="map-hint">点击星星查看知识点，答对测验即可点亮</span>
     </p>
   </section>
 

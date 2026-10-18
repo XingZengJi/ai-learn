@@ -62,6 +62,8 @@
     data: null,
     view: "mine",
     shared: null, /* { name, lit: { "knowledge:k0101": true, "projects:p6": true } } */
+    zoom: null,     /* 触屏上放大到的课程 id；null = 全图（桌面端忽略） */
+    selected: null, /* 触屏放大后选中、还没打开的知识点 id */
     notice: "",   /* 分享链接解不开时的一次性提示 */
     preview: loadPreview(),
     passed: loadPassed(), /* 测验通过记录 { k0101: "2026-07-11" }，「清空」不清它 */
@@ -268,9 +270,77 @@
 
   /* ---------- 星图 ---------- */
   const tooltip = document.getElementById("tooltip");
-  function renderStarmap() {
-    Starmap.render(document.getElementById("starmap"), state.data, state, {
+  const starmapSvg = document.getElementById("starmap");
+
+  /* 触屏：换一个视野（放大到某星座 / 回全图），从当前 viewBox 平滑过渡 */
+  function zoomTo(cid) {
+    const from = starmapSvg.getAttribute("viewBox").split(" ").map(Number);
+    state.zoom = cid;
+    state.selected = null;
+    renderStarmap(from);
+    /* 星图很高，点的星座可能在屏幕下半截；放大后的画面占满整个星图元素，所以把元素顶到视野里 */
+    if (typeof starmapSvg.scrollIntoView === "function") starmapSvg.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderZoomBar() {
+    const bar = document.getElementById("zoom-bar");
+    const on = Starmap.isTouchMode() && !!state.zoom;
+    bar.hidden = !on;
+    document.getElementById("map-hint").textContent = Starmap.isTouchMode()
+      ? "点一个星座放大，再点星星查看知识点"
+      : "点击星星查看知识点，答对测验即可点亮";
+    if (!on) return;
+    /* 放大栏吸在视图条下面；两条的高度都会随文字折行变，所以按实际高度算 */
+    const top = document.getElementById("view-bar").offsetHeight;
+    bar.style.top = top + "px";
+    starmapSvg.style.scrollMarginTop = (top + bar.offsetHeight + 8) + "px";
+
+    const text = document.getElementById("zoom-text");
+    const open = document.getElementById("zoom-open");
+    const k = state.selected && state.data.kById[state.selected];
+    if (k) {
+      const st = state.statusOf("knowledge", k.id);
+      text.textContent = "✦ " + k.name + " · " + STATUS_TEXT[st];
+      open.hidden = false;
+    } else {
+      const course = state.data.courses.find(c => c.id === state.zoom);
+      const ks = state.data.knowledgeByCourse[course.id] || [];
+      const lit = ks.filter(x => state.statusOf("knowledge", x.id) === "done").length;
+      text.textContent = course.cn + " · " + lit + " / " + ks.length + " 颗已点亮 · 点星星或用 ‹ › 选";
+      open.hidden = true;
+    }
+  }
+
+  /* 大星座里有的星放大后也只隔几个像素，手指分不开；‹ › 按知识点顺序逐颗选，挨得再近也能选到 */
+  function stepSelected(delta) {
+    const ks = state.data.knowledgeByCourse[state.zoom] || [];
+    if (!ks.length) return;
+    const i = ks.findIndex(k => k.id === state.selected);
+    const next = i < 0 ? (delta > 0 ? 0 : ks.length - 1) : (i + delta + ks.length) % ks.length;
+    state.selected = ks[next].id;
+    renderStarmap();
+  }
+
+  function setupZoomBar() {
+    document.getElementById("zoom-back").addEventListener("click", () => zoomTo(null));
+    document.getElementById("zoom-prev").addEventListener("click", () => stepSelected(-1));
+    document.getElementById("zoom-next").addEventListener("click", () => stepSelected(1));
+    document.getElementById("zoom-open").addEventListener("click", () => {
+      const k = state.selected && state.data.kById[state.selected];
+      if (k) openKnowledge(k);
+    });
+  }
+
+  function renderStarmap(animateFrom) {
+    Starmap.render(starmapSvg, state.data, state, {
       onStarClick(k) { openKnowledge(k); },
+      /* 触屏放大后：第一次点只选中（名字出现在放大栏），再点同一颗才打开 */
+      onStarTap(k) {
+        if (state.selected === k.id) { openKnowledge(k); return; }
+        state.selected = k.id;
+        renderStarmap();
+      },
+      onCourseTap(c) { zoomTo(c.id); },
       onStarHover(k, course, st, e) {
         tooltip.innerHTML = "<strong>" + k.name + "</strong>" +
           "<div class='tt-sub'>" + course.cn + " · " + STATUS_TEXT[st] +
@@ -281,7 +351,8 @@
         tooltip.style.top = (e.clientY - 44) + "px";
       },
       onHoverEnd() { tooltip.hidden = true; }
-    });
+    }, { animateFrom: animateFrom });
+    renderZoomBar();
   }
 
   /* ---------- 项目视图 ---------- */
@@ -457,7 +528,7 @@
 
   renderChrome();
   loadData()
-    .then(() => { applyView(); setupTabs(); renderAll(); Heatmap.init(); })
+    .then(() => { applyView(); setupTabs(); setupZoomBar(); renderAll(); Heatmap.init(); })
     .catch(err => {
       document.querySelector("main").innerHTML =
         '<p style="text-align:center;color:#9aa5bd;padding:40px">数据加载失败：' + err.message +

@@ -1,5 +1,8 @@
 /* 星图渲染：知识点=星星，课程=星座，梯队=天区。
- * 天区/槽位/梯队色全部来自 courses.json 的 layout 与 tiers 字段（按厂商数据驱动）。 */
+ * 天区/槽位/梯队色全部来自 courses.json 的 layout 与 tiers 字段（按厂商数据驱动）。
+ * 触屏（手机）上整张图缩到三分之一，星星小到点不准，改成两步：
+ *   全图点星座 → 放大到这个星座（只改 viewBox，不重排）→ 点星星先选中，再点一次才打开。
+ * 两步都按「离手指最近」来判定，不依赖每颗星那圈很小的点击热区。 */
 (function () {
   "use strict";
 
@@ -25,6 +28,63 @@
     };
   }
 
+  /* 星云半径：星座大小只由星星数决定（CLAUDE.md「星座大小」一节的公式） */
+  function nebulaR(n) {
+    return n === 1 ? 0 : Math.min(30 + n * 7, 80);
+  }
+
+  function isTouchMode() {
+    return !!(window.matchMedia &&
+      (window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 640px)").matches));
+  }
+
+  /* 放大到某个星座时的 viewBox：宽高比与全图一致，星图元素的尺寸就不会跳，页面不会跟着抖 */
+  function zoomBox(data, center, n) {
+    const [vw, vh] = data.layout.viewBox;
+    const R = nebulaR(n);
+    const w = Math.min(vw, Math.max(220, 2 * R + 100));
+    const h = w * vh / vw;
+    const midY = center[1] + (R * 0.82 + 30) / 2; /* 星座连同下方标签一起居中 */
+    const x = Math.max(0, Math.min(vw - w, center[0] - w / 2));
+    const y = Math.max(0, Math.min(vh - h, midY - h / 2));
+    return [x, y, w, h];
+  }
+
+  function setBox(svg, box) {
+    svg.setAttribute("viewBox", box.map(v => +v.toFixed(2)).join(" "));
+  }
+
+  function animateBox(svg, from, to) {
+    cancelAnimationFrame(svg._zoomRaf);
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || !from) { setBox(svg, to); return; }
+    const t0 = performance.now(), D = 320;
+    const step = now => {
+      const t = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - t, 3);
+      setBox(svg, from.map((v, i) => v + (to[i] - v) * e));
+      if (t < 1) svg._zoomRaf = requestAnimationFrame(step);
+    };
+    svg._zoomRaf = requestAnimationFrame(step);
+  }
+
+  /* 屏幕坐标 → 星图坐标。星图元素与 viewBox 宽高比一致，线性换算即可 */
+  function toSvgPoint(svg, e) {
+    const r = svg.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    const [x, y, w, h] = svg.getAttribute("viewBox").split(" ").map(Number);
+    return [x + (e.clientX - r.left) / r.width * w, y + (e.clientY - r.top) / r.height * h];
+  }
+
+  /* items: [[对象, [x, y]], ...]；返回 maxDist 以内离 p 最近的对象 */
+  function nearest(items, p, maxDist) {
+    let best = null, bestD = maxDist;
+    items.forEach(([obj, q]) => {
+      const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (d <= bestD) { best = obj; bestD = d; }
+    });
+    return best;
+  }
+
   function el(name, attrs) {
     const node = document.createElementNS(SVG_NS, name);
     for (const k in attrs) node.setAttribute(k, attrs[k]);
@@ -44,7 +104,7 @@
         const stars = data.knowledgeByCourse[course.id] || [];
         const n = stars.length;
         const rng = mulberry32(seedOf(course.id));
-        const R = n === 1 ? 0 : Math.min(30 + n * 7, 80);
+        const R = nebulaR(n);
         stars.forEach((k, j) => {
           if (n === 1) { starPos[k.id] = slot; return; }
           const angle = (j / n) * Math.PI * 2 + rng() * 0.9 - 0.45;
@@ -56,11 +116,39 @@
     return { centers, starPos };
   }
 
-  function render(svg, data, state, handlers) {
+  /* opts.animateFrom：上一刻的 viewBox，给了就从它平滑过渡到新视野（放大 / 换星座 / 回全图） */
+  function render(svg, data, state, handlers, opts) {
     svg.textContent = "";
     const [vw, vh] = data.layout.viewBox;
-    svg.setAttribute("viewBox", "0 0 " + vw + " " + vh);
     const { centers, starPos } = layout(data);
+    const full = [0, 0, vw, vh];
+    /* 分享图片要画全图，不管当时放大到哪（见 share.js 的 svgToImage） */
+    svg.dataset.fullViewBox = full.join(" ");
+
+    const touch = isTouchMode();
+    const zoomCourse = touch && state.zoom ? data.courses.find(c => c.id === state.zoom) : null;
+    const box = zoomCourse
+      ? zoomBox(data, centers[zoomCourse.id], (data.knowledgeByCourse[zoomCourse.id] || []).length)
+      : full;
+    if (opts && opts.animateFrom) animateBox(svg, opts.animateFrom, box);
+    else { cancelAnimationFrame(svg._zoomRaf); setBox(svg, box); }
+    svg.classList.toggle("zoomed", !!zoomCourse);
+
+    svg.onclick = !touch ? null : e => {
+      const p = toSvgPoint(svg, e);
+      if (!p) return;
+      if (zoomCourse) {
+        const ks = data.knowledgeByCourse[zoomCourse.id] || [];
+        const k = nearest(ks.map(k => [k, starPos[k.id]]), p, 34);
+        if (k) { handlers.onStarTap(k); return; }
+      }
+      /* 判定点取星云中心略偏下，把下方的课程标签也算进星座的范围 */
+      const c = nearest(data.courses.map(c => {
+        const R = nebulaR((data.knowledgeByCourse[c.id] || []).length);
+        return [c, [centers[c.id][0], centers[c.id][1] + R * 0.3]];
+      }), p, zoomCourse ? 120 : 150);
+      if (c && c !== zoomCourse) handlers.onCourseTap(c);
+    };
 
     const defs = el("defs", {});
     for (const t of Object.keys(data.tiers)) {
@@ -128,12 +216,12 @@
       /* 全部点亮（含预览）即触发整座光环，预览也能先睹为快 */
       const allLit = stars.length > 0 && statuses.every(isLit);
 
-      const g = el("g", { "data-course": course.id });
+      const g = el("g", { "data-course": course.id, class: course === zoomCourse ? "focus" : "" });
 
       /* 整座点亮：星座背后浮起梯队色光环 */
       if (allLit) {
         const [hx, hy] = centers[course.id];
-        const hr = stars.length === 1 ? 42 : Math.min(30 + stars.length * 7, 80) + 42;
+        const hr = stars.length === 1 ? 42 : nebulaR(stars.length) + 42;
         g.appendChild(el("ellipse", {
           cx: hx, cy: hy, rx: hr, ry: hr * 0.72 + 8,
           fill: "url(#halo-t" + course.tier + ")",
@@ -171,21 +259,28 @@
         } else {
           sg.appendChild(el("circle", { class: "core", cx: x, cy: y, r: 4, fill: "#2b3550", stroke: "#3a4666", "stroke-width": 1 }));
         }
+        /* 触屏放大后选中的那颗：外面套一圈白环，名字显示在 app.js 的放大栏里 */
+        if (state.selected === k.id && zoomCourse) {
+          sg.appendChild(el("circle", { class: "star-selected-ring", cx: x, cy: y, r: 11 }));
+        }
         /* 更大的点击热区（透明填充必须内联，避免脱离 CSS 时变黑遮盖星星） */
         sg.appendChild(el("circle", { class: "star-hit", cx: x, cy: y, r: 14, fill: "transparent" }));
 
-        sg.addEventListener("click", () => handlers.onStarClick(k));
         sg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlers.onStarClick(k); } });
-        sg.addEventListener("mouseenter", e => handlers.onStarHover(k, course, st, e));
-        sg.addEventListener("mousemove", e => handlers.onStarHover(k, course, st, e));
-        sg.addEventListener("mouseleave", handlers.onHoverEnd);
+        /* 触屏的点击统一交给上面的 svg.onclick 判定；悬停提示在触屏上点一下会卡住不消失，也不挂 */
+        if (!touch) {
+          sg.addEventListener("click", () => handlers.onStarClick(k));
+          sg.addEventListener("mouseenter", e => handlers.onStarHover(k, course, st, e));
+          sg.addEventListener("mousemove", e => handlers.onStarHover(k, course, st, e));
+          sg.addEventListener("mouseleave", handlers.onHoverEnd);
+        }
         g.appendChild(sg);
       });
 
       /* 课程标签：计数含预览点亮；整座点亮加 ✦ 徽记 */
       const [cx, cy] = centers[course.id];
       const litCount = statuses.filter(isLit).length;
-      const labelY = cy + (stars.length === 1 ? 24 : Math.min(30 + stars.length * 7, 80) * 0.82 + 22);
+      const labelY = cy + (stars.length === 1 ? 24 : nebulaR(stars.length) * 0.82 + 22);
       const label = el("text", { x: cx, y: labelY, "text-anchor": "middle", class: "course-label" + (allLit ? " done" : "") });
       label.textContent = allLit ? "✦ " + course.cn + " ✦" : course.cn;
       if (allLit) {
@@ -202,5 +297,5 @@
     });
   }
 
-  window.Starmap = { render: render };
+  window.Starmap = { render: render, isTouchMode: isTouchMode };
 })();

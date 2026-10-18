@@ -101,6 +101,8 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 /* ============ 星图 ============ */
 .starmap-wrap { width: 100%; max-width: 1560px; margin: 0 auto; }
 #starmap { width: 100%; height: auto; display: block; }
+/* 触屏：连点两下同一颗星（选中 → 打开）别被浏览器当成双击放大网页；双指缩放照常可用 */
+#starmap, .zoom-bar button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
 .region-label {
   font-family: var(--font-mono); font-size: 12px;
@@ -109,6 +111,28 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .constellation-line { stroke: #2a3454; }
 .star-hit { fill: transparent; }
 .star { cursor: pointer; }
+/* 触屏放大到某个星座时，其余星座淡下去，视线集中在要点的那一座 */
+#starmap g[data-course] { transition: opacity 0.3s ease; }
+#starmap.zoomed g[data-course]:not(.focus) { opacity: 0.3; }
+.star-selected-ring { fill: none; stroke: #ffffff; stroke-width: 1.4; animation: ring-pulse 1.4s ease-in-out infinite; }
+@keyframes ring-pulse { 50% { stroke-opacity: 0.35; } }
+
+.zoom-bar {
+  position: sticky; z-index: 15;
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 16px 8px; padding: 8px 12px;
+  background: rgba(16, 22, 39, 0.94); border: 1px solid var(--line); border-radius: 10px;
+  backdrop-filter: blur(6px); color: var(--ink); font-size: 13.5px;
+}
+.zoom-bar[hidden] { display: none; }
+#zoom-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zoom-bar button {
+  flex: none; background: transparent; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font-size: 13px;
+}
+.zoom-bar button.primary { border-color: var(--t2); background: rgba(57, 135, 229, 0.16); }
+.zoom-bar button.step { padding: 4px 11px; font-size: 15px; line-height: 1; }
+.zoom-bar button[hidden] { display: none; }
 .star circle.core { transition: r 0.25s ease, filter 0.25s ease; }
 @keyframes flare {
   0%   { r: 4.5; }
@@ -386,6 +410,7 @@ a.kd-btn { display: inline-block; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   .dust.tw, .star.lit circle.core, .constellation-halo, .kq-star { animation: none; }
   .confetti-burst { display: none; }
+  .star-selected-ring { animation: none; }
 }
 
 @media (max-width: 640px) {
