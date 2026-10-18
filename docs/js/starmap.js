@@ -1,8 +1,11 @@
 /* 星图渲染：知识点=星星，课程=星座，梯队=天区。
- * 天区/槽位/梯队色全部来自 courses.json 的 layout 与 tiers 字段（按厂商数据驱动）。
- * 触屏（手机）上整张图缩到三分之一，星星小到点不准，改成两步：
- *   全图点星座 → 放大到这个星座（只改 viewBox，不重排）→ 点星星先选中，再点一次才打开。
- * 两步都按「离手指最近」来判定，不依赖每颗星那圈很小的点击热区。 */
+ * 宽屏：天区/槽位/梯队色全部来自 courses.json 的 layout 与 tiers 字段（按厂商数据驱动）。
+ * 窄屏（≤ 640px，手机竖屏）：宽屏那张 1200 宽的图塞进手机只剩三分之一大，课程名看不清，
+ *   所以不用 layout.slots，按天区自动排成两列（compactGeometry），课程名按宽度折行。
+ *   星座内部的星星排布两边一样（都以课程 id 为种子），只是星座摆的位置不同。
+ * 触屏上星星仍然太小、挨得太近，点击改成两步：
+ *   全图点星座 → 放大到这个星座 → 点星星先选中，再点一次才打开。
+ *   两步都按「离手指最近」来判定，不依赖每颗星那圈很小的点击热区。 */
 (function () {
   "use strict";
 
@@ -33,19 +36,116 @@
     return n === 1 ? 0 : Math.min(30 + n * 7, 80);
   }
 
+  /* 课程标签基线相对星云中心的下移量 */
+  function labelOffset(n) {
+    return n === 1 ? 24 : nebulaR(n) * 0.82 + 22;
+  }
+
+  function isCompact() {
+    return !!(window.matchMedia && window.matchMedia("(max-width: 640px)").matches);
+  }
+
   function isTouchMode() {
     return !!(window.matchMedia &&
       (window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 640px)").matches));
   }
 
-  /* 放大到某个星座时的 viewBox：宽高比与全图一致，星图元素的尺寸就不会跳，页面不会跟着抖 */
-  function zoomBox(data, center, n) {
-    const [vw, vh] = data.layout.viewBox;
+  /* ---------- 窄屏两列布局 ---------- */
+  const COMPACT_W = 400;          /* 手机上约 0.9 px / 单位 */
+  const COMPACT_COLS = [105, 295]; /* 两列星座中心 x；最大星云直径 160，两列之间还留 30 */
+  const LABEL_EM = 11;            /* 课程名每行最多约 11 个汉字宽（14 号字 ≈ 154 单位，不越过列宽） */
+  const LINE_H = 17;
+
+  /* 估算文字宽度（em）：汉字算 1，拉丁字母数字按 0.55 */
+  function textEm(s) {
+    let w = 0;
+    for (const ch of s) w += /[\u0000-\u024f]/.test(ch) ? 0.55 : 1;
+    return w;
+  }
+
+  function tokenize(text) {
+    return text.match(/[A-Za-z0-9&'’.+\-\/]+\s*|\s+|./gu) || [];
+  }
+
+  /* 按 maxEm 贪心折行：英文单词整个挪到下一行，汉字逐字断 */
+  function greedyWrap(text, maxEm) {
+    const lines = [];
+    let cur = "";
+    tokenize(text).forEach(t => {
+      if (cur.trim() && textEm((cur + t).trimEnd()) > maxEm) { lines.push(cur.trimEnd()); cur = t.trimStart(); }
+      else cur += t;
+    });
+    if (cur.trim()) lines.push(cur.trimEnd());
+    return lines;
+  }
+
+  /* 课程名折行。现有课程名最多折两行：这时逐个断点试，取两行里较长那行最短的断法，
+   * 在两个汉字中间断（「产品 / 人」）额外扣分，优先断在空格、斜杠处；
+   * 贪心断法会出现「创业者/产品人的 AI 素 / 养」这种末行只剩一个字的情况 */
+  function wrapLabel(text, maxEm) {
+    const lines = greedyWrap(text, maxEm);
+    if (lines.length !== 2) return lines;
+    const tokens = tokenize(text);
+    const cjk = /[^\u0000-\u024f]/;
+    let best = lines, bestScore = Infinity;
+    for (let i = 1; i < tokens.length; i++) {
+      const a = tokens.slice(0, i).join("").trimEnd(), b = tokens.slice(i).join("").trimStart();
+      const wa = textEm(a), wb = textEm(b);
+      if (!a || !b || wa > maxEm || wb > maxEm) continue;
+      const score = Math.max(wa, wb) + (cjk.test(a.slice(-1)) && cjk.test(b[0]) ? 3 : 0);
+      if (score < bestScore) { bestScore = score; best = [a, b]; }
+    }
+    return best;
+  }
+
+  /* 星座摆放位置。宽屏按 courses.json 的槽位；窄屏按天区自上而下两个一行，行高取这一行里最大的星座与最长的标签 */
+  function geometry(data, compact) {
+    const byTier = {};
+    data.courses.forEach(c => (byTier[c.tier] = byTier[c.tier] || []).push(c));
+    const centers = {};
+    if (!compact) {
+      for (const tier of Object.keys(byTier)) {
+        byTier[tier].forEach((course, i) => { centers[course.id] = (data.layout.slots[tier] || [])[i] || [600, 400]; });
+      }
+      return { compact: false, viewBox: data.layout.viewBox, centers: centers, regions: data.layout.regions, lines: null };
+    }
+    const lines = {}, regions = [];
+    let y = 0;
+    for (const tier of Object.keys(byTier)) {
+      const rg = (data.layout.regions || []).find(r => String(r.tier) === String(tier));
+      y += 34;
+      regions.push({ tier: +tier, y: y, label: rg ? rg.label : data.tiers[tier].name });
+      y += 14;
+      const courses = byTier[tier];
+      for (let i = 0; i < courses.length; i += 2) {
+        const row = courses.slice(i, i + 2).map(c => {
+          const n = (data.knowledgeByCourse[c.id] || []).length;
+          lines[c.id] = wrapLabel(c.cn, LABEL_EM);
+          return { c: c, n: n };
+        });
+        const cy = y + Math.max(...row.map(o => nebulaR(o.n) * 0.72)) + 22;
+        row.forEach((o, j) => { centers[o.c.id] = [row.length === 1 ? COMPACT_W / 2 : COMPACT_COLS[j], cy]; });
+        y = cy + Math.max(...row.map(o => labelOffset(o.n) + (lines[o.c.id].length - 1) * LINE_H + 15)) + 26;
+      }
+    }
+    return { compact: true, viewBox: [COMPACT_W, Math.round(y + 10)], centers: centers, regions: regions, lines: lines };
+  }
+
+  /* 放大到某个星座时的 viewBox */
+  function zoomBox(geo, center, n, nLines) {
+    const [vw, vh] = geo.viewBox;
     const R = nebulaR(n);
     const w = Math.min(vw, Math.max(220, 2 * R + 100));
+    const x = Math.max(0, Math.min(vw - w, center[0] - w / 2));
+    if (geo.compact) {
+      /* 窄屏全图本身就是细长一条，保持宽高比会把星座放进一根长条里；只框住星座和它的标签，星图元素随之变矮 */
+      const top = center[1] - R * 0.72 - 30;
+      const bottom = center[1] + labelOffset(n) + (nLines - 1) * LINE_H + 15 + 24;
+      return [x, top, w, bottom - top];
+    }
+    /* 宽屏：宽高比与全图一致，星图元素的尺寸就不会跳，页面不会跟着抖 */
     const h = w * vh / vw;
     const midY = center[1] + (R * 0.82 + 30) / 2; /* 星座连同下方标签一起居中 */
-    const x = Math.max(0, Math.min(vw - w, center[0] - w / 2));
     const y = Math.max(0, Math.min(vh - h, midY - h / 2));
     return [x, y, w, h];
   }
@@ -91,48 +191,50 @@
     return node;
   }
 
-  /* 计算全部星星坐标；返回 { starPos: {kid: [x,y]}, centers: {cid: [x,y]} } */
-  function layout(data) {
-    const centers = {}, starPos = {};
-    const slots = data.layout.slots;
-    const byTier = {};
-    data.courses.forEach(c => (byTier[c.tier] = byTier[c.tier] || []).push(c));
-    for (const tier of Object.keys(byTier)) {
-      byTier[tier].forEach((course, i) => {
-        const slot = (slots[tier] || [])[i] || [600, 400];
-        centers[course.id] = slot;
-        const stars = data.knowledgeByCourse[course.id] || [];
-        const n = stars.length;
-        const rng = mulberry32(seedOf(course.id));
-        const R = nebulaR(n);
-        stars.forEach((k, j) => {
-          if (n === 1) { starPos[k.id] = slot; return; }
-          const angle = (j / n) * Math.PI * 2 + rng() * 0.9 - 0.45;
-          const r = R * (0.5 + 0.5 * rng());
-          starPos[k.id] = [slot[0] + Math.cos(angle) * r, slot[1] + Math.sin(angle) * r * 0.72];
-        });
+  /* 星星坐标：以星座中心为原点、课程 id 为种子，宽屏窄屏同一个形状 */
+  function starPositions(data, centers) {
+    const starPos = {};
+    data.courses.forEach(course => {
+      const c = centers[course.id];
+      const stars = data.knowledgeByCourse[course.id] || [];
+      const n = stars.length;
+      const rng = mulberry32(seedOf(course.id));
+      const R = nebulaR(n);
+      stars.forEach((k, j) => {
+        if (n === 1) { starPos[k.id] = c; return; }
+        const angle = (j / n) * Math.PI * 2 + rng() * 0.9 - 0.45;
+        const r = R * (0.5 + 0.5 * rng());
+        starPos[k.id] = [c[0] + Math.cos(angle) * r, c[1] + Math.sin(angle) * r * 0.72];
       });
-    }
-    return { centers, starPos };
+    });
+    return starPos;
   }
 
-  /* opts.animateFrom：上一刻的 viewBox，给了就从它平滑过渡到新视野（放大 / 换星座 / 回全图） */
+  /* opts.animateFrom：上一刻的 viewBox，给了就从它平滑过渡到新视野（放大 / 换星座 / 回全图）
+   * opts.plain：一律按宽屏桌面样式画全图（分享图片用），不看屏幕宽度、是不是触屏 */
   function render(svg, data, state, handlers, opts) {
     svg.textContent = "";
-    const [vw, vh] = data.layout.viewBox;
-    const { centers, starPos } = layout(data);
+    const plain = !!(opts && opts.plain);
+    const geo = geometry(data, !plain && isCompact());
+    const [vw, vh] = geo.viewBox;
+    const centers = geo.centers;
+    const starPos = starPositions(data, centers);
     const full = [0, 0, vw, vh];
-    /* 分享图片要画全图，不管当时放大到哪（见 share.js 的 svgToImage） */
-    svg.dataset.fullViewBox = full.join(" ");
+    /* app.js 回全图时要把视野滚回刚才那个星座，得知道它在图上的位置 */
+    svg._centers = centers;
+    svg._fullH = vh;
 
-    const touch = isTouchMode();
+    const touch = !plain && isTouchMode();
     const zoomCourse = touch && state.zoom ? data.courses.find(c => c.id === state.zoom) : null;
     const box = zoomCourse
-      ? zoomBox(data, centers[zoomCourse.id], (data.knowledgeByCourse[zoomCourse.id] || []).length)
+      ? zoomBox(geo, centers[zoomCourse.id], (data.knowledgeByCourse[zoomCourse.id] || []).length,
+          geo.lines ? geo.lines[zoomCourse.id].length : 1)
       : full;
-    if (opts && opts.animateFrom) animateBox(svg, opts.animateFrom, box);
+    /* 窄屏放大会改变星图元素的高度，逐帧过渡会让整页跟着上下抖，直接切换 */
+    if (opts && opts.animateFrom && !geo.compact) animateBox(svg, opts.animateFrom, box);
     else { cancelAnimationFrame(svg._zoomRaf); setBox(svg, box); }
     svg.classList.toggle("zoomed", !!zoomCourse);
+    svg.classList.toggle("compact", geo.compact);
 
     svg.onclick = !touch ? null : e => {
       const p = toSvgPoint(svg, e);
@@ -185,7 +287,7 @@
     }
 
     /* 天区标签 */
-    data.layout.regions.forEach(rg => {
+    geo.regions.forEach(rg => {
       const t = el("text", { x: 24, y: rg.y, class: "region-label" });
       t.textContent = rg.label;
       svg.appendChild(t);
@@ -193,9 +295,9 @@
       svg.appendChild(tick);
     });
 
-    /* 课程先修关系（虚线，仅前两个梯队，避免杂乱） */
+    /* 课程先修关系（虚线，仅前两个梯队，避免杂乱）；窄屏两列排布下连线会横穿别的星座，不画 */
     data.courses.forEach(c => {
-      if (c.tier === 3) return;
+      if (c.tier === 3 || geo.compact) return;
       (c.prereq || []).forEach(pid => {
         const from = centers[pid], to = centers[c.id];
         if (!from || !to) return;
@@ -280,15 +382,21 @@
       /* 课程标签：计数含预览点亮；整座点亮加 ✦ 徽记 */
       const [cx, cy] = centers[course.id];
       const litCount = statuses.filter(isLit).length;
-      const labelY = cy + (stars.length === 1 ? 24 : nebulaR(stars.length) * 0.82 + 22);
+      const labelY = cy + labelOffset(stars.length);
       const label = el("text", { x: cx, y: labelY, "text-anchor": "middle", class: "course-label" + (allLit ? " done" : "") });
-      label.textContent = allLit ? "✦ " + course.cn + " ✦" : course.cn;
+      /* 窄屏按 geometry 算好的行折开（行数决定了行高，这里不能再加 ✦，否则可能多出一行压到下一排） */
+      const labelLines = geo.lines ? geo.lines[course.id] : [allLit ? "✦ " + course.cn + " ✦" : course.cn];
+      labelLines.forEach((line, li) => {
+        const ts = el("tspan", { x: cx, dy: li ? LINE_H : 0 });
+        ts.textContent = line;
+        label.appendChild(ts);
+      });
       if (allLit) {
         label.style.fill = color; /* 内联 style 才能压过样式表的 fill */
         label.setAttribute("filter", "url(#glow-t" + course.tier + ")");
       }
       g.appendChild(label);
-      const count = el("text", { x: cx, y: labelY + 15, "text-anchor": "middle", class: "course-count" });
+      const count = el("text", { x: cx, y: labelY + (labelLines.length - 1) * LINE_H + 15, "text-anchor": "middle", class: "course-count" });
       count.textContent = allLit ? litCount + " / " + stars.length + " 全座点亮" : litCount + " / " + stars.length;
       if (allLit) count.style.fill = color;
       g.appendChild(count);
@@ -297,5 +405,5 @@
     });
   }
 
-  window.Starmap = { render: render, isTouchMode: isTouchMode };
+  window.Starmap = { render: render, isTouchMode: isTouchMode, isCompact: isCompact };
 })();

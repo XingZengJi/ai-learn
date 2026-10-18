@@ -225,6 +225,15 @@
     }
   }
 
+  function plainStarmap() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const noop = () => {};
+    Starmap.render(svg, state.data, state,
+      { onStarClick: noop, onStarTap: noop, onCourseTap: noop, onStarHover: noop, onHoverEnd: noop },
+      { plain: true });
+    return svg;
+  }
+
   function openShare() {
     Share.open({
       provider: provider,
@@ -233,7 +242,8 @@
       stats: countStats(),
       siteTitle: P.title,
       eyebrow: P.eyebrow,
-      svg: document.getElementById("starmap")
+      /* 另画一张宽屏样式的全图：屏幕上那张在手机上是两列长图，或者正放大在某个星座 */
+      svg: plainStarmap()
     });
   }
 
@@ -275,11 +285,21 @@
   /* 触屏：换一个视野（放大到某星座 / 回全图），从当前 viewBox 平滑过渡 */
   function zoomTo(cid) {
     const from = starmapSvg.getAttribute("viewBox").split(" ").map(Number);
+    const prev = state.zoom;
     state.zoom = cid;
     state.selected = null;
     renderStarmap(from);
-    /* 星图很高，点的星座可能在屏幕下半截；放大后的画面占满整个星图元素，所以把元素顶到视野里 */
-    if (typeof starmapSvg.scrollIntoView === "function") starmapSvg.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (cid) {
+      /* 星图很高，点的星座可能在屏幕下半截；放大后的画面占满整个星图元素，所以把元素顶到视野里 */
+      if (typeof starmapSvg.scrollIntoView === "function") starmapSvg.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (prev && Starmap.isCompact()) {
+      /* 窄屏回全图时星图一下变回好几屏高，把视野滚回刚才那个星座，免得用户找不着 */
+      const c = starmapSvg._centers[prev];
+      const r = starmapSvg.getBoundingClientRect();
+      if (c && r.height) {
+        window.scrollTo({ top: window.scrollY + r.top + c[1] / starmapSvg._fullH * r.height - window.innerHeight / 2 });
+      }
+    }
   }
 
   function renderZoomBar() {
@@ -319,6 +339,15 @@
     const next = i < 0 ? (delta > 0 ? 0 : ks.length - 1) : (i + delta + ks.length) % ks.length;
     state.selected = ks[next].id;
     renderStarmap();
+  }
+
+  /* 手机转横屏、电脑把窗口拉窄：跨过 640px 就换一套排布重画 */
+  function watchCompact() {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const onChange = () => { if (state.data) renderStarmap(); };
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
   }
 
   function setupZoomBar() {
@@ -528,7 +557,7 @@
 
   renderChrome();
   loadData()
-    .then(() => { applyView(); setupTabs(); setupZoomBar(); renderAll(); Heatmap.init(); })
+    .then(() => { applyView(); setupTabs(); setupZoomBar(); watchCompact(); renderAll(); Heatmap.init(); })
     .catch(err => {
       document.querySelector("main").innerHTML =
         '<p style="text-align:center;color:#9aa5bd;padding:40px">数据加载失败：' + err.message +

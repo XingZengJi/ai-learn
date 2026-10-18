@@ -114,6 +114,10 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 /* 触屏放大到某个星座时，其余星座淡下去，视线集中在要点的那一座 */
 #starmap g[data-course] { transition: opacity 0.3s ease; }
 #starmap.zoomed g[data-course]:not(.focus) { opacity: 0.3; }
+/* 窄屏两列布局：手机上约 0.9 倍，14 号课程名 ≈ 12.6px */
+#starmap.compact .course-label { font-size: 14px; }
+#starmap.compact .course-count { font-size: 12px; }
+#starmap.compact .region-label { font-size: 13px; letter-spacing: 0.12em; }
 .star-selected-ring { fill: none; stroke: #ffffff; stroke-width: 1.4; animation: ring-pulse 1.4s ease-in-out infinite; }
 @keyframes ring-pulse { 50% { stroke-opacity: 0.35; } }
 
