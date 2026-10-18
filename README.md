@@ -51,7 +51,7 @@ python3 -m http.server 8000 -d docs   # 然后打开 http://localhost:8000
 |---|---|
 | `docs/` | 成就地图网页（GitHub Pages 直接发布），数据在 `docs/data/` |
 | `Course/` | 公开的课程中文笔记，按厂商分 `Claude/`、`Codex/` |
-| `学习计划.md` | 22 门 Anthropic 课的中文速览、10 周安排、进度追踪 |
+| `学习计划.md` | 22 门 Anthropic 课的中文速览、10 周安排 |
 | `notes/` | 学习笔记（费曼输出法） |
 | `practice/` | 实战项目的方案、需求与复盘 |
 | `tools/` | 数据校验 `check-data.py`、网页冒烟测试 `e2e.js` |
