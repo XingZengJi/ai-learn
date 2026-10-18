@@ -151,7 +151,14 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "kq-opt";
-      btn.innerHTML = '<span class="kq-letter mono">' + "ABCD"[i] + "</span><span>" + q.options[origIdx] + "</span>";
+      /* 选项和解析按纯文本放：题库里有 <sales_records> 这类字面尖括号，走 innerHTML 会被当成标签吞掉 */
+      const letter = document.createElement("span");
+      letter.className = "kq-letter mono";
+      letter.textContent = "ABCD"[i];
+      const text = document.createElement("span");
+      text.textContent = q.options[origIdx];
+      btn.appendChild(letter);
+      btn.appendChild(text);
       btn.addEventListener("click", () => {
         if (answered) return;
         answered = true;
@@ -173,7 +180,10 @@
   function showExplain(card, right, explain) {
     const box = document.createElement("div");
     box.className = "kq-explain" + (right ? "" : " wrong");
-    box.innerHTML = "<strong>" + (right ? "✓ 答对了" : "✗ 答错了") + "</strong>" + explain;
+    const verdict = document.createElement("strong");
+    verdict.textContent = right ? "✓ 答对了" : "✗ 答错了";
+    box.appendChild(verdict);
+    box.appendChild(document.createTextNode(explain));
     card.appendChild(box);
 
     const next = document.createElement("button");

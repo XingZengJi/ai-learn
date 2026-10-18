@@ -27,12 +27,20 @@
       planLink: false
     }
   };
+  /* 浏览器禁用网站数据时 localStorage 一碰就抛错；包一层，存不了就当没存，页面照常能用 */
+  function storeGet(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function storeSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) { /* 存不了：这次访问的点亮记录刷新后会丢 */ }
+  }
+
   /* URL ?v= 优先 → localStorage 记忆 → 默认 anthropic */
   const provider = (function () {
     const fromUrl = new URLSearchParams(location.search).get("v");
-    const remembered = localStorage.getItem("cc-map-provider");
+    const remembered = storeGet("cc-map-provider");
     const p = PROVIDERS[fromUrl] ? fromUrl : (PROVIDERS[remembered] ? remembered : "anthropic");
-    localStorage.setItem("cc-map-provider", p);
+    storeSet("cc-map-provider", p);
     document.body.dataset.provider = p;
     return p;
   })();
@@ -97,20 +105,20 @@
   }
 
   function loadPreview() {
-    try { return JSON.parse(localStorage.getItem(PREVIEW_KEY)) || {}; }
+    try { return JSON.parse(storeGet(PREVIEW_KEY)) || {}; }
     catch (e) { return {}; }
   }
   function savePreview() {
-    localStorage.setItem(PREVIEW_KEY, JSON.stringify(state.preview));
+    storeSet(PREVIEW_KEY, JSON.stringify(state.preview));
   }
 
   const PASSED_KEY = "cc-map-quiz-passed" + P.storageSuffix;
   function loadPassed() {
-    try { return JSON.parse(localStorage.getItem(PASSED_KEY)) || {}; }
+    try { return JSON.parse(storeGet(PASSED_KEY)) || {}; }
     catch (e) { return {}; }
   }
   function savePassed() {
-    localStorage.setItem(PASSED_KEY, JSON.stringify(state.passed));
+    storeSet(PASSED_KEY, JSON.stringify(state.passed));
   }
 
   async function loadData() {
@@ -442,7 +450,7 @@
     const sw = document.getElementById("switch-provider");
     sw.textContent = P.switchLabel;
     sw.addEventListener("click", () => {
-      localStorage.setItem("cc-map-provider", P.switchTo);
+      storeSet("cc-map-provider", P.switchTo);
       location.search = "?v=" + P.switchTo; /* 整页刷新，状态最干净 */
     });
   }

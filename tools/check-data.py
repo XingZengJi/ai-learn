@@ -64,6 +64,16 @@ def check_provider(data_dir):
         if not re.fullmatch(r"p\d{1,2}", pid) or int(pid[1:]) > 52:
             fail(f"project id {pid} 不符合 p<1–52> 格式，分享链接编不进去")
 
+    # 这些字段在网页里走 innerHTML 拼接，字面的 <xxx> 会被浏览器当成标签吞掉（题目选项/解析/概要已改为纯文本，不受限）
+    html_fields = [("courses", c["id"], c.get(f, "")) for c in files["courses"]["courses"] for f in ("cn", "en")]
+    html_fields += [("tiers", t, v.get("name", "")) for t, v in tiers.items()]
+    html_fields += [("knowledge", k["id"], k.get("name", "")) for k in files["knowledge"]["knowledge"]]
+    html_fields += [("projects", p["id"], s) for p in files["projects"]["projects"]
+                    for s in [p.get("name", ""), p.get("level", ""), p.get("weeks", ""), p.get("desc", "")] + p.get("extraSkills", [])]
+    for typ, _id, text in html_fields:
+        if re.search(r"<[A-Za-z/!]", text):
+            fail(f"{typ} {_id} 含有尖括号写法 {text!r}：网页会把它当成 HTML 标签吞掉，请改写")
+
     # quiz：summary 非空；questions 允许为空数组（题库待补充）；有题则每题 4 选项、answer 合法、有题干和解析
     n_questions = 0
     for kid, v in files["quiz"].items():

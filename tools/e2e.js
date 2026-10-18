@@ -23,8 +23,9 @@ function readJSON(rel) {
   return JSON.parse(fs.readFileSync(path.join(DOCS, rel), "utf8"));
 }
 
-/* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage；hash 形如 "#s=1.1" */
-async function makePage(provider, hash) {
+/* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage；hash 形如 "#s=1.1"；
+ * blockStorage 模拟浏览器禁用网站数据：一碰 localStorage 就抛 SecurityError */
+async function makePage(provider, hash, blockStorage) {
   const virtualConsole = new VirtualConsole();
   virtualConsole.on("error", () => {}); /* jsdom 不支持导航跳转，静默这类噪音 */
   const dom = new JSDOM(html, {
@@ -33,6 +34,11 @@ async function makePage(provider, hash) {
   });
   const { window } = dom;
   if (provider) window.localStorage.setItem("cc-map-provider", provider);
+  if (blockStorage) {
+    Object.defineProperty(window, "localStorage", {
+      get() { throw new window.DOMException("blocked in test", "SecurityError"); }
+    });
+  }
 
   // fetch shim：本地数据从文件系统读取；外部 API（热力图）直接失败走 fallback
   window.fetch = (u) => {
@@ -250,6 +256,29 @@ async function makePage(provider, hash) {
   check("并在我的星图里打开同一个知识点的测验入口",
     !modalS.hidden && [...modalS.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("开始测验")));
   check("我的星图是空的（没继承分享者的点亮）", docS.querySelectorAll("#starmap .star.lit").length === 0);
+
+  console.log("— 题目里的尖括号原样显示（k1106 第 2 题）—");
+  const winT = await makePage(null);
+  const docT = winT.document;
+  const kTag = knowledge.find(k => k.id === "k1106");
+  [...docT.querySelectorAll("#list-root .k-item")].find(b => b.textContent.includes(kTag.name)).click();
+  const modalT = docT.getElementById("k-modal");
+  [...modalT.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验")).click();
+  modalT.querySelector(".kq-opt").click();
+  [...modalT.querySelectorAll(".kd-btn")].find(b => b.textContent === "下一题").click();
+  check("选项里的 <sales_records> 没被吞掉",
+    [...modalT.querySelectorAll(".kq-opt")].some(o => o.textContent.includes("把销售记录包进 <sales_records> 标签")));
+  modalT.querySelector(".kq-opt").click();
+  check("解析里的 <sales_records> 与 <data> 也在",
+    /<sales_records> 好过 <data>/.test(modalT.querySelector(".kq-explain").textContent));
+
+  console.log("— 浏览器禁用存储时页面照常可用 —");
+  const winB = await makePage(null, "", true);
+  const docB = winB.document;
+  check("星图照常渲染", docB.querySelectorAll("#starmap .star").length === knowledge.length);
+  check("没有出现「数据加载失败」", !docB.querySelector("main").textContent.includes("数据加载失败"));
+  docB.querySelector("#projects-track .project-toggle").click();
+  check("点「我完成了」不报错，当前页面照样亮起", docB.getElementById("stat-projects").textContent.startsWith("1 / "));
 
   console.log("— 解不开的分享链接 —");
   const winX = await makePage(null, "#s=garbage");
