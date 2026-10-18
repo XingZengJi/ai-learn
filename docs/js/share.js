@@ -256,9 +256,9 @@
   /* SVG 单独画成图片时读不到页面样式表，星图用到的几个 class 在这里内联一份 */
   const SVG_STYLE =
     ".region-label{font-family:" + MONO + ";font-size:12px;letter-spacing:.3em;fill:#5d6880}" +
-    ".course-label{font-family:" + FONT + ";font-size:13px;fill:#9aa5bd}" +
+    ".course-label{font-family:" + FONT + ";font-size:13px;fill:#d3daea}" +
     ".course-label.done{fill:#e9edf6;font-weight:600}" +
-    ".course-count{font-family:" + MONO + ";font-size:11px;fill:#5d6880}";
+    ".course-count{font-family:" + MONO + ";font-size:11px;fill:#8e9ab3}";
 
   function svgToImage(svg) {
     const clone = svg.cloneNode(true);

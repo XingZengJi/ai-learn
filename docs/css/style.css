@@ -147,14 +147,15 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 @keyframes twinkle { 0%,100% { opacity: 0.5; } 50% { opacity: 0.12; } }
 .dust.tw { animation: twinkle 4s ease-in-out infinite; }
 
-.course-label { font-size: 13px; fill: var(--ink-2); }
+/* 星座下的课程名与计数：比正文次级色更亮，深色星空上手机也看得清（share.js 的 SVG_STYLE 同值） */
+.course-label { font-size: 13px; fill: #d3daea; }
 .course-label.done { fill: var(--ink); font-weight: 600; }
 
 /* 整座点亮的光环：缓慢呼吸 */
 @keyframes halo-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 .constellation-halo { animation: halo-breathe 3.6s ease-in-out infinite; }
 .constellation-halo.preview { opacity: 0.65; }
-.course-count { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); }
+.course-count { font-family: var(--font-mono); font-size: 11px; fill: #8e9ab3; }
 
 .map-legend {
   display: flex; gap: 22px; justify-content: center; flex-wrap: wrap;
