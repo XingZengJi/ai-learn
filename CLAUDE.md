@@ -108,8 +108,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 - 全对撒花：通过时先把知识点 id 记进 `pendingCelebrate`，**等弹窗关闭后**才在那颗星周围迸发纸屑（弹窗开着时撒等于被盖住）。定位靠 starmap 给每个星星组打的 `data-k` 属性——这是 `starmap.js` 与 `quiz.js` 之间的隐式契约，改星星渲染时别把它弄丢
 - `js/starmap.js` — SVG 星图：知识点=星星，课程=星座，用课程 ID 做种子的伪随机布局保证每次渲染一致；整座点亮加光环与 ✦ 徽记。**天区/槽位/viewBox 全部来自各厂商 courses.json 的 `layout` 字段**，星图代码不含任何厂商假设（星座大小与布局间距的换算见上文）
 - **触屏两步交互**（`starmap.js` 的 `isTouchMode()`：`pointer: coarse` 或宽度 ≤ 640px）：全图上星星小到点不准（放大后最挤的星座里两颗星也只隔几像素），所以触屏改成「点星座 → 放大 → 点星星先选中、再点或按「打开」才进详情」，放大栏的 ‹ › 按知识点顺序逐颗选，专门兜挨得太近的星。放大只改 `viewBox`，宽高比与全图一致，星图元素尺寸不变；点击统一由 `svg.onclick` 按「离手指最近」判定，不挂每颗星的 click / 悬停。状态在 app.js 的 `state.zoom` / `state.selected`，桌面端完全忽略
-- **触屏全图星座下只标编号**（`courses.json` 的 `order`），课程名对照列在星图下方的 `#map-index`：课程名最长近 30 字、手机上星座间距只有几十像素，放大字号必然互相压盖，别再尝试「把字调大」
-- **分享图片不用屏幕上那张星图**：app.js 的 `plainStarmap()` 用 `{ plain: true }` 另画一张桌面样式的全图交给 share.js——屏幕上那张在手机上可能正放大着、或星座下只有编号
+- `starmap.js` 把全图 viewBox 写进 `svg.dataset.fullViewBox`，`share.js` 生成图片时用它画全图——手机上放大着点分享也不会只截到局部。这是两者之间的隐式契约，和 `data-k` 一样别弄丢
 - `js/heatmap.js` — GitHub 贡献热力图：客户端直接请求 `github-contributions-api.jogruber.de` 公开 API，SVG 自绘；两个版本共享
 - `data/<厂商>/quiz.json` — 知识点概要与题库；`answer` 是 `options` 的 0 起下标，渲染时选项乱序；`questions: []` 表示题库待补充
 - **配色的唯一数据源是各厂商 courses.json 的 `tiers[*].colorHex`**，加载后由 app.js 注入 CSS 变量 `--t1/--t2/--t3`；style.css 里 `body[data-provider="openai"]` 的同值覆盖只为防首屏闪色，改配色时两处同步

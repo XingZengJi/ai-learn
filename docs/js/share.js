@@ -262,6 +262,10 @@
 
   function svgToImage(svg) {
     const clone = svg.cloneNode(true);
+    /* 手机上可能正放大在某个星座：图片永远画全图，去掉放大态的淡化与选中环 */
+    clone.setAttribute("viewBox", svg.dataset.fullViewBox || svg.getAttribute("viewBox"));
+    clone.classList.remove("zoomed");
+    clone.querySelectorAll(".star-selected-ring").forEach(n => n.remove());
     const [, , vw, vh] = clone.getAttribute("viewBox").split(" ").map(Number);
     /* 不要手动 setAttribute("xmlns")：XMLSerializer 会自动带上命名空间，再加一个就成了重复属性，图片直接加载失败 */
     clone.setAttribute("width", vw);

@@ -225,15 +225,6 @@
     }
   }
 
-  function plainStarmap() {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const noop = () => {};
-    Starmap.render(svg, state.data, state,
-      { onStarClick: noop, onStarTap: noop, onCourseTap: noop, onStarHover: noop, onHoverEnd: noop },
-      { plain: true });
-    return svg;
-  }
-
   function openShare() {
     Share.open({
       provider: provider,
@@ -242,8 +233,7 @@
       stats: countStats(),
       siteTitle: P.title,
       eyebrow: P.eyebrow,
-      /* 另画一张桌面样式的全图：屏幕上那张在手机上可能正放大着，或星座下只有编号 */
-      svg: plainStarmap()
+      svg: document.getElementById("starmap")
     });
   }
 
@@ -297,9 +287,8 @@
     const on = Starmap.isTouchMode() && !!state.zoom;
     bar.hidden = !on;
     document.getElementById("map-hint").textContent = Starmap.isTouchMode()
-      ? "点一个星座放大，再点星星查看知识点 · 编号对照见下方"
+      ? "点一个星座放大，再点星星查看知识点"
       : "点击星星查看知识点，答对测验即可点亮";
-    renderMapIndex();
     if (!on) return;
     /* 放大栏吸在视图条下面；两条的高度都会随文字折行变，所以按实际高度算 */
     const top = document.getElementById("view-bar").offsetHeight;
@@ -330,45 +319,6 @@
     const next = i < 0 ? (delta > 0 ? 0 : ks.length - 1) : (i + delta + ks.length) % ks.length;
     state.selected = ks[next].id;
     renderStarmap();
-  }
-
-  /* 触屏：星座下只有编号，这里按天区列出「编号 → 课程名」，点一行直接放大到那个星座 */
-  function renderMapIndex() {
-    const root = document.getElementById("map-index");
-    root.hidden = !Starmap.isTouchMode();
-    root.textContent = "";
-    if (root.hidden) return;
-    Object.keys(state.data.tiers).forEach(t => {
-      const courses = state.data.courses.filter(c => String(c.tier) === t);
-      if (!courses.length) return;
-      const region = (state.data.layout.regions || []).find(r => String(r.tier) === t);
-      const h = document.createElement("h3");
-      h.textContent = region ? region.label : state.data.tiers[t].name;
-      h.style.color = tierColor(t);
-      root.appendChild(h);
-      courses.forEach(c => {
-        const ks = state.data.knowledgeByCourse[c.id] || [];
-        const lit = ks.filter(k => state.statusOf("knowledge", k.id) === "done").length;
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "idx-row" + (state.zoom === c.id ? " current" : "");
-        const num = document.createElement("span");
-        num.className = "idx-num";
-        num.textContent = c.order;
-        num.style.color = tierColor(c.tier);
-        const name = document.createElement("span");
-        name.className = "idx-name";
-        name.textContent = c.cn;
-        const count = document.createElement("span");
-        count.className = "idx-count";
-        count.textContent = lit + " / " + ks.length + (ks.length && lit === ks.length ? " ✦" : "");
-        btn.appendChild(num);
-        btn.appendChild(name);
-        btn.appendChild(count);
-        btn.addEventListener("click", () => zoomTo(c.id));
-        root.appendChild(btn);
-      });
-    });
   }
 
   function setupZoomBar() {
