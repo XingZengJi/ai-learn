@@ -114,6 +114,23 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 /* 触屏放大到某个星座时，其余星座淡下去，视线集中在要点的那一座 */
 #starmap g[data-course] { transition: opacity 0.3s ease; }
 #starmap.zoomed g[data-course]:not(.focus) { opacity: 0.3; }
+/* 触屏全图会被缩到约 0.29 倍：编号 40 → 屏幕上约 11px，天区标题同理放大 */
+.course-num { font-family: var(--font-mono); font-size: 40px; font-weight: 600; fill: var(--ink-2); }
+#starmap.numbered .region-label { font-size: 34px; letter-spacing: 0.08em; }
+
+/* 触屏全图下方的星座编号对照：普通网页文字，手机上看得清 */
+.map-index { max-width: 640px; margin: 4px auto 0; padding: 0 16px; }
+.map-index[hidden] { display: none; }
+.map-index h3 { font-size: 12.5px; font-weight: 600; color: var(--ink-3); margin: 14px 0 6px; letter-spacing: 0.05em; }
+.map-index button {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: transparent; border: 0; border-bottom: 1px solid var(--line);
+  color: var(--ink); padding: 9px 2px; font-size: 14px; text-align: left;
+}
+.map-index .idx-num { flex: none; width: 26px; font-family: var(--font-mono); font-weight: 600; text-align: right; }
+.map-index .idx-name { flex: 1; min-width: 0; }
+.map-index .idx-row.current .idx-name { color: var(--t2); font-weight: 600; }
+.map-index .idx-count { flex: none; font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
 .star-selected-ring { fill: none; stroke: #ffffff; stroke-width: 1.4; animation: ring-pulse 1.4s ease-in-out infinite; }
 @keyframes ring-pulse { 50% { stroke-opacity: 0.35; } }
 

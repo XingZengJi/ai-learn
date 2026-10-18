@@ -306,6 +306,14 @@ async function makePage(provider, hash, opts = {}) {
   const modalM = docM.getElementById("k-modal");
   check("图例提示改成「点一个星座放大」", docM.getElementById("map-hint").textContent.includes("点一个星座放大"));
   check("全图时没有放大栏", zoomBar.hidden);
+  const nCoursesM = readJSON("data/anthropic/courses.json").courses.length;
+  check("全图星座下显示编号（" + svgM.querySelectorAll(".course-num").length + " 个），不画小字课程名",
+    svgM.querySelectorAll(".course-num").length === nCoursesM && svgM.querySelectorAll(".course-label").length === 0);
+  check("天区标题放大", svgM.classList.contains("numbered"));
+  const idxRows = docM.querySelectorAll("#map-index .idx-row");
+  check("星图下方有编号对照，" + nCoursesM + " 门课一行一门", !docM.getElementById("map-index").hidden && idxRows.length === nCoursesM);
+  check("对照行写着编号和课程全名", idxRows[1].querySelector(".idx-num").textContent === "2" &&
+    idxRows[1].querySelector(".idx-name").textContent === readJSON("data/anthropic/courses.json").courses[1].cn);
 
   const c02ks = knowledge.filter(k => k.course === "c02");
   const [ax, ay] = starXY(c02ks[0].id);
@@ -318,6 +326,7 @@ async function makePage(provider, hash, opts = {}) {
   check("放大栏出现并显示课程名", !zoomBar.hidden &&
     docM.getElementById("zoom-text").textContent.includes(readJSON("data/anthropic/courses.json").courses.find(c => c.id === "c02").cn));
   check("其余星座淡化", svgM.classList.contains("zoomed") && svgM.querySelector('g[data-course="c02"]').classList.contains("focus"));
+  check("放大后换回完整课程名", svgM.querySelectorAll(".course-label").length > 0 && svgM.querySelectorAll(".course-num").length === 0);
 
   const [bx, by] = starXY(c02ks[1].id);
   tapAt(bx + 6, by - 4);
@@ -332,7 +341,15 @@ async function makePage(provider, hash, opts = {}) {
   check("点「打开」也能打开", !modalM.hidden && modalM.querySelector("#k-modal-title").textContent === c02ks[1].name);
   modalM.querySelector(".k-modal-close").click();
   check("关掉弹窗后仍停在放大视野", !zoomBar.hidden && svgM.getAttribute("viewBox") !== fullBox);
-  check("分享图片用的全图 viewBox 已记下", svgM.dataset.fullViewBox === fullBox);
+  /* 截下交给 share.js 画图的那张星图：必须是桌面样式的全图，带完整课程名 */
+  let sharedSvg = null;
+  winM.Share.open = o => { sharedSvg = o.svg; };
+  docM.querySelector("#projects-track .project-toggle").click(); /* 点亮一颗行星，「分享我的星图」才会出现 */
+  [...docM.querySelectorAll("#view-bar-actions button")].find(b => b.textContent === "分享我的星图").click();
+  check("放大着点分享：图片用的是全图", !!sharedSvg && sharedSvg.getAttribute("viewBox") === fullBox);
+  check("分享图片带完整课程名、没有编号和选中环", sharedSvg.querySelectorAll(".course-label").length === nCoursesM &&
+    !sharedSvg.querySelector(".course-num") && !sharedSvg.querySelector(".star-selected-ring") && !sharedSvg.classList.contains("zoomed"));
+  check("分享时屏幕上的星图仍停在放大视野", svgM.getAttribute("viewBox") !== fullBox);
   docM.getElementById("zoom-next").click();
   check("› 选中下一颗", docM.getElementById("zoom-text").textContent.includes(c02ks[2].name));
   docM.getElementById("zoom-prev").click();
@@ -345,10 +362,17 @@ async function makePage(provider, hash, opts = {}) {
   await wait(450);
   check("「← 全图」回到完整星图", svgM.getAttribute("viewBox") === fullBox && zoomBar.hidden);
   check("回全图后选中状态清掉", !svgM.querySelector(".star-selected-ring"));
+  docM.querySelectorAll("#map-index .idx-row")[4].click();
+  await wait(450);
+  check("点对照表第 5 行：放大到第 5 个星座", svgM.querySelector("g.focus") &&
+    svgM.querySelector("g.focus").dataset.course === readJSON("data/anthropic/courses.json").courses[4].id);
+  check("对照表高亮当前星座", docM.querySelectorAll("#map-index .idx-row")[4].classList.contains("current"));
 
   console.log("— 桌面端不受影响 —");
   check("桌面端图例仍是「点击星星」", document.getElementById("map-hint").textContent.includes("点击星星"));
   check("桌面端星图不挂整图点击判定", document.getElementById("starmap").onclick === null);
+  check("桌面端照常显示课程名、没有编号对照", document.querySelectorAll("#starmap .course-label").length > 0 &&
+    !document.querySelector("#starmap .course-num") && document.getElementById("map-index").hidden);
 
   console.log("— 解不开的分享链接 —");
   const winX = await makePage(null, "#s=garbage");

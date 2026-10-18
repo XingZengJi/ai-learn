@@ -2,7 +2,9 @@
  * 天区/槽位/梯队色全部来自 courses.json 的 layout 与 tiers 字段（按厂商数据驱动）。
  * 触屏（手机）上整张图缩到三分之一，星星小到点不准，改成两步：
  *   全图点星座 → 放大到这个星座（只改 viewBox，不重排）→ 点星星先选中，再点一次才打开。
- * 两步都按「离手指最近」来判定，不依赖每颗星那圈很小的点击热区。 */
+ * 两步都按「离手指最近」来判定，不依赖每颗星那圈很小的点击热区。
+ * 触屏全图上课程名同样小到看不清，而且课程名最长近 30 字、星座间距只有几十像素，放大字号必然互相压盖，
+ * 所以星座下只标大号编号，名字对照由 app.js 在星图下方用普通网页文字列出。 */
 (function () {
   "use strict";
 
@@ -116,16 +118,15 @@
     return { centers, starPos };
   }
 
-  /* opts.animateFrom：上一刻的 viewBox，给了就从它平滑过渡到新视野（放大 / 换星座 / 回全图） */
+  /* opts.animateFrom：上一刻的 viewBox，给了就从它平滑过渡到新视野（放大 / 换星座 / 回全图）
+   * opts.plain：一律按桌面样式画全图（分享图片用），不看是不是触屏 */
   function render(svg, data, state, handlers, opts) {
     svg.textContent = "";
     const [vw, vh] = data.layout.viewBox;
     const { centers, starPos } = layout(data);
     const full = [0, 0, vw, vh];
-    /* 分享图片要画全图，不管当时放大到哪（见 share.js 的 svgToImage） */
-    svg.dataset.fullViewBox = full.join(" ");
 
-    const touch = isTouchMode();
+    const touch = !(opts && opts.plain) && isTouchMode();
     const zoomCourse = touch && state.zoom ? data.courses.find(c => c.id === state.zoom) : null;
     const box = zoomCourse
       ? zoomBox(data, centers[zoomCourse.id], (data.knowledgeByCourse[zoomCourse.id] || []).length)
@@ -133,6 +134,9 @@
     if (opts && opts.animateFrom) animateBox(svg, opts.animateFrom, box);
     else { cancelAnimationFrame(svg._zoomRaf); setBox(svg, box); }
     svg.classList.toggle("zoomed", !!zoomCourse);
+    /* 触屏全图：课程名换成大号编号，天区标题也放大（尺寸见 style.css 的 .numbered） */
+    const numbered = touch && !zoomCourse;
+    svg.classList.toggle("numbered", numbered);
 
     svg.onclick = !touch ? null : e => {
       const p = toSvgPoint(svg, e);
@@ -187,6 +191,7 @@
     /* 天区标签 */
     data.layout.regions.forEach(rg => {
       const t = el("text", { x: 24, y: rg.y, class: "region-label" });
+      if (numbered) t.setAttribute("y", rg.y - 4);
       t.textContent = rg.label;
       svg.appendChild(t);
       const tick = el("line", { x1: 24, y1: rg.y + 8, x2: 210, y2: rg.y + 8, stroke: tierColor(data, rg.tier), "stroke-width": 2, opacity: 0.5 });
@@ -281,6 +286,14 @@
       const [cx, cy] = centers[course.id];
       const litCount = statuses.filter(isLit).length;
       const labelY = cy + (stars.length === 1 ? 24 : nebulaR(stars.length) * 0.82 + 22);
+      if (numbered) {
+        const num = el("text", { x: cx, y: labelY + 12, "text-anchor": "middle", class: "course-num" + (allLit ? " done" : "") });
+        num.textContent = course.order;
+        if (allLit) num.style.fill = color;
+        g.appendChild(num);
+        svg.appendChild(g);
+        return;
+      }
       const label = el("text", { x: cx, y: labelY, "text-anchor": "middle", class: "course-label" + (allLit ? " done" : "") });
       label.textContent = allLit ? "✦ " + course.cn + " ✦" : course.cn;
       if (allLit) {
