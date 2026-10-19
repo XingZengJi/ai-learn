@@ -101,6 +101,9 @@
     svg.appendChild(more);
 
     mount.appendChild(svg);
+    /* 手机上图比屏幕宽、要横着滑；默认停在最左边是一年前，先滑到最右边看最近的 */
+    const scroller = mount.parentElement;
+    scroller.scrollLeft = scroller.scrollWidth;
   }
 
   function positionTooltip(e) {

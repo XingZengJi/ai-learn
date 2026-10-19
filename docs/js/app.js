@@ -419,6 +419,12 @@
     renderAll();
   }
 
+  /* 梯队色优先取 projects.json 的 tier；没有这字段时按位置三等分（n=5 时等价于旧的 [1,1,2,2,3]） */
+  function projectColor(p, i) {
+    const n = state.data.projects.length;
+    return tierColor(p.tier || Math.min(3, Math.floor((i * 3) / n) + 1));
+  }
+
   function renderProjects() {
     const track = document.getElementById("projects-track");
     track.textContent = "";
@@ -427,8 +433,7 @@
     state.data.projects.forEach((p, i) => {
       const st = state.statusOf("projects", p.id);
       const size = n < 2 ? 96 : Math.round(48 + (i * 48) / (n - 1));
-      /* 梯队色优先取 projects.json 的 tier；没有这字段时按位置三等分（n=5 时等价于旧的 [1,1,2,2,3]） */
-      const color = tierColor(p.tier || Math.min(3, Math.floor((i * 3) / n) + 1));
+      const color = projectColor(p, i);
 
       const card = document.createElement("article");
       card.className = "project-card";
@@ -525,12 +530,12 @@
     const secProj = document.createElement("section");
     secProj.className = "list-section";
     secProj.innerHTML = "<h2>实战项目 · 行星</h2>";
-    state.data.projects.forEach(p => {
+    state.data.projects.forEach((p, i) => {
       const st = state.statusOf("projects", p.id);
       const row = document.createElement("div");
       row.className = "list-row";
       row.innerHTML =
-        '<span class="status-dot ' + st + '" style="color:#c98500"></span>' +
+        '<span class="status-dot ' + st + '" style="color:' + projectColor(p, i) + '"></span>' +
         '<span class="name">' + p.name + '<span class="en">' + p.level + " · " + p.weeks + "</span></span>" +
         '<span class="meta">' + STATUS_TEXT[st] + (st === "done" && state.dateOf("projects", p.id) ? " · " + state.dateOf("projects", p.id) : "") + "</span>";
       secProj.appendChild(row);

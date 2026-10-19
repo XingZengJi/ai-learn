@@ -143,7 +143,7 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
   45%  { r: 11; }
   100% { r: 5.5; }
 }
-.star.lit circle.core { animation: flare 0.6s ease-out; }
+.star.flare circle.core { animation: flare 0.6s ease-out; }
 @keyframes twinkle { 0%,100% { opacity: 0.5; } 50% { opacity: 0.12; } }
 .dust.tw { animation: twinkle 4s ease-in-out infinite; }
 
@@ -413,7 +413,7 @@ a.kd-btn { display: inline-block; text-decoration: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dust.tw, .star.lit circle.core, .constellation-halo, .kq-star { animation: none; }
+  .dust.tw, .star.flare circle.core, .constellation-halo, .kq-star { animation: none; }
   .confetti-burst { display: none; }
   .star-selected-ring { animation: none; }
 }
@@ -423,5 +423,6 @@ a.kd-btn { display: inline-block; text-decoration: none; }
   .switch-btn { position: static; display: block; margin: 0 auto 14px; }
   .projects-track::before { left: 39px; }
   .planet { flex-basis: 80px; }
-  .list-row .meta { display: none; }
+  /* 手机上一行放不下全部：留进度数（3 / 8），藏掉梯队标签——天区在星图上已经看得到 */
+  .list-row .tier-chip { display: none; }
 }

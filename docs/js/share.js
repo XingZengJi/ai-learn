@@ -90,6 +90,7 @@
   /* ---------- 分享弹窗 ---------- */
   const NAME_KEY = "cc-map-nickname";
   let modal, ctx;
+  let opener = null; /* 打开前的焦点所在，关闭时还回去 */
 
   function el(tag, cls, text) {
     const n = document.createElement(tag);
@@ -100,7 +101,12 @@
 
   function initModal() {
     modal = document.getElementById("share-modal");
-    const close = () => { modal.hidden = true; document.body.style.overflow = ""; };
+    const close = () => {
+      modal.hidden = true;
+      document.body.style.overflow = "";
+      if (opener && typeof opener.focus === "function") opener.focus({ preventScroll: true });
+      opener = null;
+    };
     modal.querySelector(".k-modal-close").addEventListener("click", close);
     modal.querySelector(".k-modal-backdrop").addEventListener("click", close);
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
@@ -109,6 +115,7 @@
   /* options: { provider, kids, pids, stats: { stars, totalStars, courses, totalCourses, projects, totalProjects }, siteTitle, eyebrow, svg } */
   function open(options) {
     if (!modal) initModal();
+    if (modal.hidden) opener = document.activeElement;
     ctx = options;
     const body = modal.querySelector(".k-modal-body");
     body.textContent = "";
@@ -302,8 +309,11 @@
       g.font = "26px " + MONO;
       g.fillText(ctx.eyebrow, PAD, 96);
       g.fillStyle = "#e9edf6";
-      g.font = "bold 64px " + FONT;
-      g.fillText(name + " 的星图", PAD, 180);
+      /* 昵称最长 20 字，64 号字放不下就逐级缩小，别让标题冲出画布右边 */
+      const title = name + " 的星图";
+      let size = 64;
+      do { g.font = "bold " + size + "px " + FONT; size -= 4; } while (size >= 32 && g.measureText(title).width > W - PAD * 2);
+      g.fillText(title, PAD, 180);
       g.fillStyle = "#c3cbdd";
       g.font = "32px " + FONT;
       g.fillText("已点亮 " + ctx.stats.stars + " / " + ctx.stats.totalStars + " 颗星  ·  " +

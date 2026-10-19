@@ -5,10 +5,11 @@ import re
 import sys
 from pathlib import Path
 
-DATA_ROOT = Path(__file__).resolve().parent.parent / "docs" / "data"
+REPO = Path(__file__).resolve().parent.parent
+DATA_ROOT = REPO / "docs" / "data"
 
 
-def check_provider(data_dir):
+def check_provider(data_dir, counts):
     errors = []
 
     def fail(msg):
@@ -97,7 +98,35 @@ def check_provider(data_dir):
 
     quiz_covered = sum(1 for k in files["quiz"] if not k.startswith("_"))
     print(f"  知识点 {len(kids)} · 课程 {len(course_ids)} · 项目 {len(pids)} · 概要覆盖 {quiz_covered} 个知识点 / 共 {n_questions} 题")
+    counts[data_dir.name] = {"courses": len(course_ids), "knowledge": len(kids), "projects": len(pids), "questions": n_questions}
     return len(errors)
+
+
+def check_copy(counts):
+    """宣传文案里写死的数字要跟数据对得上：加课、补题后最容易忘的就是这几处"""
+    total = {f: sum(c[f] for c in counts.values()) for f in ("courses", "knowledge", "questions")}
+    a = counts.get("anthropic")
+    expect = [
+        ("docs/index.html", r"(\d+) 门课、(\d+) 个知识点、(\d+) 道测验题", (total["courses"], total["knowledge"], total["questions"])),
+        ("README.md", r"(\d+) 门课、(\d+) 个知识点、(\d+) 道测验题", (total["courses"], total["knowledge"], total["questions"])),
+    ]
+    if a:
+        expect.append(("学习计划.md", r"(\d+) 个知识点是星星，(\d+) 门课是星座，(\d+) 个项目是行星",
+                       (a["knowledge"], a["courses"], a["projects"])))
+    errors = 0
+    for name, pattern, want in expect:
+        m = re.search(pattern, (REPO / name).read_text())
+        if not m:
+            print(f"  ✗ {name} 里找不到计数文案（/{pattern}/）")
+            errors += 1
+        elif tuple(map(int, m.groups())) != want:
+            print(f"  ✗ {name} 写的是「{m.group(0)}」，数据实际是 {want}")
+            errors += 1
+    if errors:
+        print("    改文案时别忘了 docs/og-image.png 上也印着这几个数，那张图要重做")
+    else:
+        print(f"  ✓ README、分享卡片、学习计划里的计数与数据一致")
+    return errors
 
 
 def main():
@@ -106,9 +135,12 @@ def main():
         print("✗ docs/data/ 下没有厂商目录")
         return 1
     total_errors = 0
+    counts = {}
     for d in providers:
         print(f"[{d.name}]")
-        total_errors += check_provider(d)
+        total_errors += check_provider(d, counts)
+    print("[文案]")
+    total_errors += check_copy(counts)
     if total_errors:
         print(f"✗ 共 {total_errors} 处错误")
         return 1

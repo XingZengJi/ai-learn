@@ -223,6 +223,11 @@
     /* app.js 回全图时要把视野滚回刚才那个星座，得知道它在图上的位置 */
     svg._centers = centers;
     svg._fullH = vh;
+    /* 每次交互都整张重画；「闪亮」动画只给这次新亮的星，否则选一颗星、点一下 ‹ › 所有亮星都跟着闪。
+     * 页面刚打开（还没有上一次）时全部闪一下，当作开场 */
+    const prevLit = svg._lit;
+    const nowLit = new Set();
+    svg._lit = nowLit;
 
     const touch = !plain && isTouchMode();
     const zoomCourse = touch && state.zoom ? data.courses.find(c => c.id === state.zoom) : null;
@@ -349,7 +354,10 @@
         const [x, y] = starPos[k.id];
         const st = statuses[i];
         /* data-k 供测验通过后的撒花定位这颗星（见 quiz.js 的 celebrateAtStar） */
-        const sg = el("g", { class: "star" + (st === "done" || st === "preview" ? " lit" : ""), "data-k": k.id, tabindex: "0", role: "button" });
+        const lit = st === "done" || st === "preview";
+        if (lit) nowLit.add(k.id);
+        const flare = lit && (!prevLit || !prevLit.has(k.id));
+        const sg = el("g", { class: "star" + (lit ? " lit" : "") + (flare ? " flare" : ""), "data-k": k.id, tabindex: "0", role: "button" });
         sg.setAttribute("aria-label", k.name + "（" + ({ done: "已点亮", preview: "预览点亮", doing: "学习中", todo: "未点亮" })[st] + "）");
 
         if (st === "done") {

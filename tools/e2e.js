@@ -157,6 +157,8 @@ async function makePage(provider, hash, opts = {}) {
   check("有一圈点亮光环", !!(burst && burst.querySelector(".confetti-ring")));
   const litStar = document.querySelector('#starmap .star[data-k="k0101"]');
   check("星图上能按 data-k 定位到这颗星", !!litStar);
+  check("刚点亮的这颗星放「闪亮」动画", !!litStar && litStar.classList.contains("flare"));
+  check("其余星星没有跟着闪", document.querySelectorAll("#starmap .star.flare").length === 1);
   const bit0 = burst && burst.querySelector(".confetti-bit");
   check("纸屑定点在星星坐标上（而非 vw 满屏散布）",
     !!bit0 && bit0.style.left.endsWith("px") && !!bit0.style.getPropertyValue("--dx"));
@@ -167,6 +169,10 @@ async function makePage(provider, hash, opts = {}) {
   check("显示「已通过测验」", modal.textContent.includes("已通过测验"));
   check("已点亮的星按钮变「温习测验」", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("温习测验")));
   modal.querySelector(".k-modal-close").click();
+  document.querySelector("#projects-track .project-toggle").click(); /* 随便触发一次整图重画 */
+  check("再重画时，早就亮着的星不再闪", document.querySelectorAll("#starmap .star.flare").length === 0 &&
+    document.querySelector('#starmap .star[data-k="k0101"]').classList.contains("lit"));
+  document.querySelector("#projects-track .project-toggle").click(); /* 撤销，别影响后面的断言 */
 
   /* Anthropic 侧已无「题库为空」的知识点（175 个全部有题），所以这里改为反向断言：
      有题必考——任何知识点都不该出现「直接点亮」的绕过入口。
@@ -483,6 +489,11 @@ async function makePage(provider, hash, opts = {}) {
   check("项目视图渲染出 " + oProjects.length + " 颗行星（openai）",
     doc2.querySelectorAll("#projects-track .project-card").length === oProjects.length);
   check("切换按钮指向 Anthropic", doc2.getElementById("switch-provider").textContent.includes("Anthropic"));
+  const oTierHex = Object.values(readJSON("data/openai/courses.json").tiers).map(t => t.colorHex.toLowerCase());
+  check("列表里行星的颜色用 OpenAI 的梯队色（不是写死的 Anthropic 琥珀色）",
+    [...doc2.querySelectorAll("#list-root .list-section:last-child .status-dot")].every(d =>
+      oTierHex.includes(d.style.color.startsWith("#") ? d.style.color.toLowerCase()
+        : "#" + d.style.color.match(/\d+/g).map(v => (+v).toString(16).padStart(2, "0")).join(""))));
   check("页脚课程链接指向 OpenAI Academy", doc2.getElementById("source-link").href.includes("academy.openai.com"));
   check("学习计划链接隐藏", doc2.getElementById("plan-link-wrap").hidden === true);
   check("梯队色注入 CSS 变量", win2.document.documentElement.style.getPropertyValue("--t1") === "#12a5bd");
