@@ -123,14 +123,30 @@
     storeSet(PASSED_KEY, JSON.stringify(state.passed));
   }
 
+  function fetchJSON(u) {
+    return fetch(u).then(r => {
+      if (!r.ok) throw new Error(u + " → HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  /* 题库占全站下载量的八成，不让它挡住首屏：和另外三个文件同时开始下，但星图不等它。
+   * 失败时清掉记录，下次打开知识点会重试 */
+  let quizLoad = null;
+  function loadQuiz(started) {
+    if (!quizLoad) {
+      quizLoad = (started || fetchJSON(P.dataDir + "quiz.json")).then(
+        q => { state.data.quiz = q; },
+        err => { quizLoad = null; throw err; });
+    }
+    return quizLoad;
+  }
+
   async function loadData() {
-    const [courses, knowledge, projects, quiz] = await Promise.all(
-      ["courses.json", "knowledge.json", "projects.json", "quiz.json"]
-        .map(f => P.dataDir + f)
-        .map(u => fetch(u).then(r => {
-          if (!r.ok) throw new Error(u + " → HTTP " + r.status);
-          return r.json();
-        }))
+    const quizStarted = fetchJSON(P.dataDir + "quiz.json");
+    quizStarted.catch(() => {}); /* 首屏不管题库成败，打开知识点时再说 */
+    const [courses, knowledge, projects] = await Promise.all(
+      ["courses.json", "knowledge.json", "projects.json"].map(f => fetchJSON(P.dataDir + f))
     );
     const knowledgeByCourse = {};
     knowledge.knowledge.forEach(k => {
@@ -143,9 +159,10 @@
       knowledge: knowledge.knowledge,
       knowledgeByCourse: knowledgeByCourse,
       projects: projects.projects,
-      quiz: quiz,
+      quiz: null, /* 题库到了才填，见 loadQuiz */
       kById: Object.fromEntries(knowledge.knowledge.map(k => [k.id, k]))
     };
+    loadQuiz(quizStarted).catch(() => {});
     /* 梯队色的唯一数据源是 courses.json，同步到 CSS 变量，页面 chrome 与星图保持一致 */
     Object.keys(state.data.tiers).forEach(t => {
       document.documentElement.style.setProperty("--t" + t, state.data.tiers[t].colorHex);
@@ -256,13 +273,21 @@
     renderAll();
   }
 
-  function openKnowledge(k) {
+  function openKnowledge(k, quizFailed) {
     const course = state.data.courses.find(c => c.id === k.course);
+    /* 题库还在路上：先开弹窗显示「加载中」，到了再原地刷新；没到之前不能按「无题」处理，否则能绕过测验。
+     * 下载失败就停在提示上，下次打开知识点再重试 */
+    const quizState = state.data.quiz ? "ready" : quizFailed ? "error" : "loading";
+    if (quizState === "loading") {
+      const reopen = failed => { if (Quiz.currentId() === k.id) openKnowledge(k, failed); };
+      loadQuiz().then(() => reopen(false), () => reopen(true));
+    }
     Quiz.open({
       k: k,
       course: course,
       color: tierColor(course.tier),
-      quiz: state.data.quiz[k.id] || null,
+      quizState: quizState,
+      quiz: state.data.quiz ? state.data.quiz[k.id] || null : null,
       state: state,
       /* 别人的星图只读：测验要回自己的星图做 */
       readOnly: state.view !== "mine",

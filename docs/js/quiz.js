@@ -5,7 +5,8 @@
   const STATUS_TEXT = { done: "已点亮", doing: "进行中", todo: "未点亮" };
 
   let modal, panel, closeBtn;
-  let ctx = null; /* 每次 open 由 app.js 注入：{ k, course, color, quiz, state, readOnly, onGoMine, passedDate, onPass, onTogglePreview } */
+  let ctx = null; /* 每次 open 由 app.js 注入：{ k, course, color, quizState, quiz, state, readOnly, onGoMine, passedDate, onPass, onTogglePreview } */
+  let opener = null; /* 打开弹窗前的焦点所在，关闭时还回去，键盘用户不会被甩回页首 */
   let run = null; /* 一次测验的进行状态：{ idx, wrong[], order[][] } */
   let pendingCelebrate = null; /* 刚测验通过的知识点 id，等弹窗关闭后在那颗星周围撒花 */
 
@@ -22,6 +23,8 @@
 
   function open(options) {
     if (!modal) init();
+    /* 题库加载完会原地再 open 一次，那时焦点已在弹窗里，不能覆盖 */
+    if (modal.hidden) opener = document.activeElement;
     ctx = options;
     run = null;
     modal.hidden = false;
@@ -35,6 +38,8 @@
     document.body.style.overflow = "";
     ctx = null;
     run = null; /* 中途关闭不计成绩 */
+    if (opener && typeof opener.focus === "function") opener.focus({ preventScroll: true });
+    opener = null;
     /* 弹窗关掉、星星露出来之后才撒花——否则纸屑全被弹窗盖住 */
     if (pendingCelebrate) { const kid = pendingCelebrate; pendingCelebrate = null; celebrateAtStar(kid); }
   }
@@ -58,6 +63,14 @@
     const sum = document.createElement("p");
     sum.className = "kd-summary" + (quiz ? "" : " empty");
     sum.textContent = quiz ? quiz.summary : "概要与题库将在学到这门课时补充。";
+    /* 题库还没到（或没下下来）时不出任何按钮：此时分不清「没题」和「题没到」，给「直接点亮」就能绕过测验 */
+    if (ctx.quizState !== "ready") {
+      sum.textContent = ctx.quizState === "loading"
+        ? "正在加载题目…"
+        : "题目没有加载出来，请检查网络后关掉弹窗重新打开。";
+      panel.appendChild(sum);
+      return;
+    }
     panel.appendChild(sum);
 
     const foot = document.createElement("div");
@@ -302,5 +315,10 @@
     setTimeout(() => layer.remove(), 1800);
   }
 
-  window.Quiz = { open: open };
+  /* 当前弹窗里的知识点 id，没开为 null；app.js 等题库到了用它判断要不要原地刷新 */
+  function currentId() {
+    return ctx ? ctx.k.id : null;
+  }
+
+  window.Quiz = { open: open, currentId: currentId };
 })();

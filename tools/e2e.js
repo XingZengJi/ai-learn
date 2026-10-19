@@ -25,6 +25,7 @@ function readJSON(rel) {
 
 /* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage；hash 形如 "#s=1.1"；
  * opts.blockStorage 模拟浏览器禁用网站数据：一碰 localStorage 就抛 SecurityError
+ * opts.quiz 控制题库那一个文件："hold"（一直不到，返回的 window 上挂 __releaseQuiz() 放行）或 "fail"（下载失败）
  * opts.touch 模拟触屏："phone"（窄屏 + 触屏）或 "tablet"（宽屏 + 触屏）。jsdom 不做布局，
  *   星图元素统一按 1200×1780 的屏幕尺寸摆放，点击换算见 tapAt。返回的 window 上挂 __media 可改屏幕宽度并触发 change */
 async function makePage(provider, hash, opts = {}) {
@@ -57,7 +58,10 @@ async function makePage(provider, hash, opts = {}) {
       return Promise.reject(new Error("external blocked in test"));
     }
     const p = path.join(DOCS, u.replace("http://localhost/", ""));
-    return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(fs.readFileSync(p, "utf8"))) });
+    const res = { ok: true, json: () => Promise.resolve(JSON.parse(fs.readFileSync(p, "utf8"))) };
+    if (/quiz\.json$/.test(u) && opts.quiz === "fail") return Promise.resolve({ ok: false, status: 503 });
+    if (/quiz\.json$/.test(u) && opts.quiz === "hold") return new Promise(r => { window.__releaseQuiz = () => r(res); });
+    return Promise.resolve(res);
   };
 
   if (opts.touch) {
@@ -295,6 +299,34 @@ async function makePage(provider, hash, opts = {}) {
   check("点「我完成了」不报错，当前页面照样亮起", docB.getElementById("stat-projects").textContent.startsWith("1 / "));
 
   const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  /* 题库占全站下载量的八成，首屏不等它。没到之前打开知识点只能显示「加载中」，
+   * 绝不能当成「没题」给出「直接点亮」——那等于绕过测验 */
+  console.log("— 题库还在下载时：星图先出来，弹窗等题 —");
+  const winQ = await makePage(null, "", { quiz: "hold" });
+  const docQ = winQ.document, modalQ = docQ.getElementById("k-modal");
+  check("题库没到，星图已经渲染", docQ.querySelectorAll("#starmap .star").length === knowledge.length);
+  const kItemQ = docQ.querySelector("#list-root .k-item");
+  kItemQ.focus(); /* jsdom 的 click() 不会像真浏览器那样顺带聚焦按钮 */
+  kItemQ.click();
+  check("弹窗显示「正在加载题目」", !modalQ.hidden && modalQ.textContent.includes("正在加载题目"));
+  check("加载中不给任何按钮（没有「直接点亮」）", modalQ.querySelectorAll(".kd-btn").length === 0);
+  winQ.__releaseQuiz();
+  await wait(20);
+  check("题库到了，弹窗原地换成测验入口",
+    [...modalQ.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("开始测验")));
+  modalQ.querySelector(".k-modal-close").click();
+  check("关掉弹窗，焦点回到刚才点的那一项", docQ.activeElement === kItemQ);
+
+  console.log("— 题库下载失败：星图照常，弹窗提示重试 —");
+  const winF = await makePage(null, "", { quiz: "fail" });
+  const docF = winF.document, modalF = docF.getElementById("k-modal");
+  check("星图照常渲染", docF.querySelectorAll("#starmap .star").length === knowledge.length);
+  docF.querySelector("#list-root .k-item").click();
+  await wait(20);
+  check("弹窗提示题目没加载出来", modalF.textContent.includes("没有加载出来"));
+  check("失败时同样不给「直接点亮」", modalF.querySelectorAll(".kd-btn").length === 0);
+
   const coursesA = readJSON("data/anthropic/courses.json").courses;
   /* 在星图坐标 (sx, sy) 处点一下：按当前 viewBox 换算成屏幕坐标再派发 click */
   const tapper = (win, svg) => (sx, sy) => {
