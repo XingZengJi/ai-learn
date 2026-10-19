@@ -1,0 +1,32 @@
+# 每次推送到 main、每个 PR 自动跑数据校验和网页冒烟测试；任一失败，PR 页面会显示红叉。
+# 只做检查，不部署：网站仍由 GitHub Pages 直接从 main 的 docs/ 发布。
+name: 检查
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+      - name: 数据校验
+        run: python3 tools/check-data.py
+      - name: 网页冒烟测试
+        working-directory: tools
+        run: |
+          npm ci
+          node e2e.js
