@@ -318,9 +318,7 @@
       const stars = data.knowledgeByCourse[course.id] || [];
       const color = tierColor(data, course.tier);
       const statuses = stars.map(k => state.statusOf("knowledge", k.id));
-      const isLit = s => s === "done" || s === "preview";
-      const allDone = stars.length > 0 && statuses.every(s => s === "done");
-      /* 全部点亮（含预览）即触发整座光环，预览也能先睹为快 */
+      const isLit = s => s === "done";
       const allLit = stars.length > 0 && statuses.every(isLit);
 
       const g = el("g", { "data-course": course.id, class: course === zoomCourse ? "focus" : "" });
@@ -332,7 +330,7 @@
         g.appendChild(el("ellipse", {
           cx: hx, cy: hy, rx: hr, ry: hr * 0.72 + 8,
           fill: "url(#halo-t" + course.tier + ")",
-          class: "constellation-halo" + (allDone ? "" : " preview")
+          class: "constellation-halo"
         }));
       }
 
@@ -354,24 +352,25 @@
         const [x, y] = starPos[k.id];
         const st = statuses[i];
         /* data-k 供测验通过后的撒花定位这颗星（见 quiz.js 的 celebrateAtStar） */
-        const lit = st === "done" || st === "preview";
+        const lit = isLit(st);
         if (lit) nowLit.add(k.id);
         const flare = lit && (!prevLit || !prevLit.has(k.id));
         const sg = el("g", { class: "star" + (lit ? " lit" : "") + (flare ? " flare" : ""), "data-k": k.id, tabindex: "0", role: "button" });
-        sg.setAttribute("aria-label", k.name + "（" + ({ done: "已点亮", preview: "预览点亮", doing: "学习中", todo: "未点亮" })[st] + "）");
+        sg.setAttribute("aria-label", k.name + "（" + (lit ? "已点亮" : "未点亮") + "）");
 
-        if (st === "done") {
+        if (lit) {
           sg.appendChild(el("circle", { class: "core", cx: x, cy: y, r: 5.5, fill: color, filter: "url(#glow-t" + course.tier + ")" }));
           sg.appendChild(el("circle", { cx: x, cy: y, r: 1.8, fill: "#ffffff" }));
-        } else if (st === "preview") {
-          sg.appendChild(el("circle", { class: "core", cx: x, cy: y, r: 5, fill: color, opacity: 0.85, filter: "url(#glow-t" + course.tier + ")" }));
-          sg.appendChild(el("circle", { cx: x, cy: y, r: 9.5, fill: "none", stroke: "#c3cbdd", "stroke-width": 1.4, "stroke-dasharray": "3 3" }));
         } else {
           sg.appendChild(el("circle", { class: "core", cx: x, cy: y, r: 4, fill: "#2b3550", stroke: "#3a4666", "stroke-width": 1 }));
         }
         /* 触屏放大后选中的那颗：外面套一圈白环，名字显示在 app.js 的放大栏里 */
         if (state.selected === k.id && zoomCourse) {
           sg.appendChild(el("circle", { class: "star-selected-ring", cx: x, cy: y, r: 11 }));
+        }
+        /* 推荐的下一颗星（app.js 的 computeNext）：虚线圈慢慢转，告诉新访客从哪下手；分享图片里不画 */
+        if (!plain && state.next === k.id) {
+          sg.appendChild(el("circle", { class: "star-next-ring", cx: x, cy: y, r: 10, stroke: color }));
         }
         /* 更大的点击热区（透明填充必须内联，避免脱离 CSS 时变黑遮盖星星） */
         sg.appendChild(el("circle", { class: "star-hit", cx: x, cy: y, r: 14, fill: "transparent" }));
@@ -387,7 +386,7 @@
         g.appendChild(sg);
       });
 
-      /* 课程标签：计数含预览点亮；整座点亮加 ✦ 徽记 */
+      /* 课程标签：点亮计数；整座点亮加 ✦ 徽记 */
       const [cx, cy] = centers[course.id];
       const litCount = statuses.filter(isLit).length;
       const labelY = cy + labelOffset(stars.length);

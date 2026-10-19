@@ -25,6 +25,7 @@ function readJSON(rel) {
 
 /* 创建一个加载完成的页面实例；provider 为 null 时不预置 localStorage；hash 形如 "#s=1.1"；
  * opts.blockStorage 模拟浏览器禁用网站数据：一碰 localStorage 就抛 SecurityError
+ * opts.storage 预置 localStorage（{ 键: 对象 }），模拟老访客刷新页面
  * opts.quiz 控制题库那一个文件："hold"（一直不到，返回的 window 上挂 __releaseQuiz() 放行）或 "fail"（下载失败）
  * opts.touch 模拟触屏："phone"（窄屏 + 触屏）或 "tablet"（宽屏 + 触屏）。jsdom 不做布局，
  *   星图元素统一按 1200×1780 的屏幕尺寸摆放，点击换算见 tapAt。返回的 window 上挂 __media 可改屏幕宽度并触发 change */
@@ -37,6 +38,7 @@ async function makePage(provider, hash, opts = {}) {
   });
   const { window } = dom;
   if (provider) window.localStorage.setItem("cc-map-provider", provider);
+  for (const [k, v] of Object.entries(opts.storage || {})) window.localStorage.setItem(k, JSON.stringify(v));
   if (opts.touch) {
     const media = { narrow: opts.touch === "phone", listeners: [] };
     media.fire = () => media.listeners.forEach(f => f());
@@ -74,6 +76,8 @@ async function makePage(provider, hash, opts = {}) {
   return window;
 }
 
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
 (async () => {
   /* ==================== Anthropic 实例（默认）==================== */
   const win = await makePage(null);
@@ -106,6 +110,16 @@ async function makePage(provider, hash, opts = {}) {
   check("切换按钮文案为「⇄ OpenAI 课程」", document.getElementById("switch-provider").textContent === "⇄ OpenAI 课程");
   check("大标题为「CC 学习成就地图」", document.getElementById("site-title").textContent === "CC 学习成就地图");
 
+  console.log("— Anthropic · 新访客：从这里开始 —");
+  const studyBar = document.getElementById("study-bar");
+  const firstK = knowledge.find(k => k.course === "c01");
+  check("学习助手条推荐「从这里开始」第一门课的第一颗星",
+    !studyBar.hidden && studyBar.textContent.includes("从这里开始") && studyBar.textContent.includes(firstK.name));
+  check("星图上给这颗星套了推荐圈",
+    !!document.querySelector('#starmap .star[data-k="' + firstK.id + '"] .star-next-ring') &&
+    document.querySelectorAll("#starmap .star-next-ring").length === 1);
+  check("新访客没有错题本入口", !studyBar.querySelector(".wrong-btn"));
+
   console.log("— Anthropic · 详情弹窗（有题库知识点 k0101）—");
   const modal = document.getElementById("k-modal");
   [...document.querySelectorAll("#list-root .k-item")]
@@ -116,6 +130,10 @@ async function makePage(provider, hash, opts = {}) {
   const startBtn = [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验"));
   check("有「开始测验（" + nQ + " 题）」按钮", !!startBtn && startBtn.textContent.includes(nQ + " 题"));
   check("无「直接点亮」按钮", ![...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("直接点亮")));
+  const c01 = readJSON("data/anthropic/courses.json").courses.find(c => c.id === "c01");
+  const learnA = [...modal.querySelectorAll(".kd-links a")].find(a => a.textContent.includes("去学这门课"));
+  check("有「去学这门课」，链到官方课程页", !!learnA && learnA.href === c01.url && learnA.target === "_blank");
+  check("没有公开笔记的课不出「看中文笔记」", ![...modal.querySelectorAll(".kd-links a")].some(a => a.textContent.includes("中文笔记")));
 
   console.log("— Anthropic · 测验：先答错一题再全对 —");
   startBtn.click();
@@ -132,9 +150,20 @@ async function makePage(provider, hash, opts = {}) {
   check("答错后正确项高亮", !!modal.querySelector(".kq-opt.correct"));
   check("答错项标红", !!modal.querySelector(".kq-opt.wrong"));
   check("显示解析", !!modal.querySelector(".kq-explain"));
+  const report = modal.querySelector(".kq-report");
+  const reportUrl = report && new URL(report.href);
+  check("解析下有「这题有问题？」，预填好纠错 Issue",
+    !!reportUrl && reportUrl.pathname === "/XingZengJi/ai-learn/issues/new" &&
+    reportUrl.searchParams.get("template") === "quiz-error.yml" &&
+    reportUrl.searchParams.get("provider") === "Anthropic 版（默认）" &&
+    reportUrl.searchParams.get("location").includes("k0101") &&
+    quiz.k0101.questions.some(q => q.q === reportUrl.searchParams.get("question")));
+  check("答错的题记进错题本", (JSON.parse(win.localStorage.getItem("cc-map-wrong") || "{}").k0101 || []).length === 1);
+  check("学习助手条出现「错题本 · 1 题」", (studyBar.querySelector(".wrong-btn") || {}).textContent === "错题本 · 1 题");
   next();
   for (let i = 0; i < nQ - 1; i++) { answerCurrent(true); next(); }
   check("结算：答对 " + (nQ - 1) + " / " + nQ, modal.textContent.includes("答对 " + (nQ - 1) + " / " + nQ));
+  check("没通过时给出「去学这门课」", [...modal.querySelectorAll(".kq-result .kd-links a")].some(a => a.textContent.includes("去学这门课")));
   check("未点亮（localStorage 无记录）", !win.localStorage.getItem("cc-map-quiz-passed"));
 
   [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("再来一次")).click();
@@ -142,6 +171,14 @@ async function makePage(provider, hash, opts = {}) {
   check("结算：全对通过", modal.textContent.includes("全对，通过"));
   const passed = JSON.parse(win.localStorage.getItem("cc-map-quiz-passed") || "{}");
   check("通过记录已写入", !!passed.k0101);
+  check("全对之后错题本清空", !win.localStorage.getItem("cc-map-wrong") || win.localStorage.getItem("cc-map-wrong") === "{}");
+  const toastEl = document.getElementById("toast");
+  check("弹出成就提示「第一颗星」", !toastEl.hidden && toastEl.textContent.includes("第一颗星"));
+  check("成就记进存储", !!JSON.parse(win.localStorage.getItem("cc-map-achieved") || "{}")["first-star"]);
+  const k0102 = knowledge.find(k => k.id === "k0102");
+  const nextBtn = [...modal.querySelectorAll(".kd-btn")].find(b => b.textContent.startsWith("下一颗："));
+  check("结果页推荐同一门课的下一颗星", !!nextBtn && nextBtn.textContent.includes(k0102.name));
+  check("学习助手条改成「下一颗星」", studyBar.textContent.includes("下一颗星") && studyBar.textContent.includes(k0102.name));
   const preview = JSON.parse(win.localStorage.getItem("cc-map-preview") || "{}");
   check("点亮记录已写入（无后缀键）", preview["knowledge:k0101"] === true);
   check("视图条显示「已点亮 1 颗」", document.getElementById("view-bar-text").textContent.includes("已点亮 1 颗"));
@@ -169,6 +206,8 @@ async function makePage(provider, hash, opts = {}) {
   check("显示「已通过测验」", modal.textContent.includes("已通过测验"));
   check("已点亮的星按钮变「温习测验」", [...modal.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("温习测验")));
   modal.querySelector(".k-modal-close").click();
+  check("列表视图有成就一节，第一颗星已解锁",
+    [...document.querySelectorAll("#list-root .list-row.achievement.got")].some(r => r.textContent.includes("第一颗星")));
   document.querySelector("#projects-track .project-toggle").click(); /* 随便触发一次整图重画 */
   check("再重画时，早就亮着的星不再闪", document.querySelectorAll("#starmap .star.flare").length === 0 &&
     document.querySelector('#starmap .star[data-k="k0101"]').classList.contains("lit"));
@@ -280,6 +319,61 @@ async function makePage(provider, hash, opts = {}) {
   check("并在我的星图里打开同一个知识点的测验入口",
     !modalS.hidden && [...modalS.querySelectorAll(".kd-btn")].some(b => b.textContent.includes("开始测验")));
   check("我的星图是空的（没继承分享者的点亮）", docS.querySelectorAll("#starmap .star.lit").length === 0);
+  check("我的星图里不出「存为我的星图」", !docS.getElementById("import-shared"));
+  modalS.querySelector(".k-modal-close").click();
+
+  console.log("— 存为我的星图（换设备带进度）—");
+  const winI = await makePage(null, sharedHash, { storage: { "cc-map-preview": { "knowledge:k0201": true } } });
+  const docI = winI.document;
+  check("分享星图里不出学习助手条", docI.getElementById("study-bar").hidden);
+  const imp = docI.getElementById("import-shared");
+  check("视图条有「存为我的星图」", !!imp);
+  imp.click();
+  check("点一次只是要确认，不会直接合并", docI.body.dataset.view === "shared" && imp.textContent.includes("确认"));
+  imp.click();
+  const merged = JSON.parse(winI.localStorage.getItem("cc-map-preview"));
+  check("确认后切回我的星图", docI.body.dataset.view === "mine" && winI.location.hash === "");
+  check("合并而不是覆盖：原有的 k0201 还在，分享里的 k0101、k0102、p6 都进来了",
+    merged["knowledge:k0201"] && merged["knowledge:k0101"] && merged["knowledge:k0102"] && merged["projects:p6"]);
+  check("视图条提示存进了几颗", docI.getElementById("view-bar-text").textContent.includes("已把 2 颗星、1 个项目存进你的星图"));
+  check("带进来的进度只静默记成就，不弹提示", docI.getElementById("toast").hidden &&
+    !!JSON.parse(winI.localStorage.getItem("cc-map-achieved") || "{}")["first-project"]);
+
+  console.log("— 老访客刷新页面：测验记录读得回来 —");
+  /* 曾经 PASSED_KEY 定义在 state 之后，初始化时读取报错被 try/catch 吞掉，刷新后通过记录全丢 */
+  const winR = await makePage(null, "", { storage: {
+    "cc-map-preview": { "knowledge:k0101": true },
+    "cc-map-quiz-passed": { k0101: "2026-07-01" },
+    "cc-map-wrong": { k0102: [0, 1] }
+  } });
+  const docR = winR.document;
+  check("列表里显示原来的通过日期",
+    [...docR.querySelectorAll("#list-root .k-item")].find(b => b.textContent.includes("认识 Claude 与首次对话")).textContent.includes("2026-07-01"));
+  check("页面打开时补记已有的成就，但不弹提示", docR.getElementById("toast").hidden &&
+    !!JSON.parse(winR.localStorage.getItem("cc-map-achieved") || "{}")["first-star"]);
+
+  console.log("— 错题本复习 —");
+  const modalR = docR.getElementById("k-modal");
+  const k0102q = quiz.k0102.questions;
+  docR.querySelector("#study-bar .wrong-btn").click();
+  await wait(20);
+  check("打开错题复习，共 2 题", !modalR.hidden && modalR.textContent.includes("错题复习") &&
+    modalR.querySelector(".kq-progress").textContent === "1 / 2");
+  const pick = (right) => {
+    const q = k0102q.find(x => x.q === modalR.querySelector(".kq-q").textContent); /* 复习只抽错题，题号对不上进度，按题干找 */
+    const opts = [...modalR.querySelectorAll(".kq-opt")];
+    (right ? opts.find(o => o.textContent.includes(q.options[q.answer])) : opts.find(o => !o.textContent.includes(q.options[q.answer]))).click();
+    [...modalR.querySelectorAll(".kd-btn")].find(b => /下一题|查看结果/.test(b.textContent)).click();
+  };
+  pick(true); pick(false);
+  check("结算：答对 1 / 2，还剩 1 题", modalR.textContent.includes("答对 1 / 2") && modalR.textContent.includes("还有 1 题"));
+  check("答对的移出错题本，答错的留下", JSON.stringify(JSON.parse(winR.localStorage.getItem("cc-map-wrong")).k0102) === "[1]");
+  check("复习不会点亮星星", !JSON.parse(winR.localStorage.getItem("cc-map-preview"))["knowledge:k0102"]);
+  [...modalR.querySelectorAll(".kd-btn")].find(b => b.textContent === "继续复习").click();
+  await wait(20);
+  pick(true);
+  check("再复习一轮全对，错题本清空", modalR.textContent.includes("错题本已经清空") &&
+    docR.getElementById("study-bar").querySelector(".wrong-btn") === null);
 
   console.log("— 题目里的尖括号原样显示（k1106 第 2 题）—");
   const winT = await makePage(null);
@@ -304,7 +398,6 @@ async function makePage(provider, hash, opts = {}) {
   docB.querySelector("#projects-track .project-toggle").click();
   check("点「我完成了」不报错，当前页面照样亮起", docB.getElementById("stat-projects").textContent.startsWith("1 / "));
 
-  const wait = ms => new Promise(r => setTimeout(r, ms));
 
   /* 题库占全站下载量的八成，首屏不等它。没到之前打开知识点只能显示「加载中」，
    * 绝不能当成「没题」给出「直接点亮」——那等于绕过测验 */
@@ -491,7 +584,7 @@ async function makePage(provider, hash, opts = {}) {
   check("切换按钮指向 Anthropic", doc2.getElementById("switch-provider").textContent.includes("Anthropic"));
   const oTierHex = Object.values(readJSON("data/openai/courses.json").tiers).map(t => t.colorHex.toLowerCase());
   check("列表里行星的颜色用 OpenAI 的梯队色（不是写死的 Anthropic 琥珀色）",
-    [...doc2.querySelectorAll("#list-root .list-section:last-child .status-dot")].every(d =>
+    [...[...doc2.querySelectorAll("#list-root .list-section")].find(sec => sec.textContent.startsWith("实战项目")).querySelectorAll(".status-dot")].every(d =>
       oTierHex.includes(d.style.color.startsWith("#") ? d.style.color.toLowerCase()
         : "#" + d.style.color.match(/\d+/g).map(v => (+v).toString(16).padStart(2, "0")).join(""))));
   check("页脚课程链接指向 OpenAI Academy", doc2.getElementById("source-link").href.includes("academy.openai.com"));
@@ -510,6 +603,9 @@ async function makePage(provider, hash, opts = {}) {
   [...doc2.querySelectorAll("#list-root .k-item")]
     .find(b => b.textContent.includes("从「提问」到「派活」")).click();
   check("弹窗显示课时概要", modal2.textContent.includes(oQuiz.k0301.summary.slice(0, 12)));
+  const notes2 = [...modal2.querySelectorAll(".kd-links a")].find(a => a.textContent.includes("中文笔记"));
+  check("有公开笔记的课出「看中文笔记」，链到仓库里的文件夹",
+    !!notes2 && notes2.href === "https://github.com/XingZengJi/ai-learn/tree/main/Course/Codex/03AgentsWF");
   const oStart = [...modal2.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验"));
   check("有「开始测验」按钮", !!oStart);
   check("无「直接点亮」绕过入口",

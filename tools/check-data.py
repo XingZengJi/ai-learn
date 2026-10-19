@@ -2,6 +2,7 @@
 """校验 docs/data/<厂商>/ 下 4 个 JSON 的结构与交叉引用（纯标准库）。补完数据后必跑：python3 tools/check-data.py"""
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -48,6 +49,17 @@ def check_provider(data_dir, counts):
                 fail(f"梯队 {t} 有 {n} 门课但 layout.slots 只有 {len(slots)} 个槽位")
             if t not in tiers:
                 fail(f"课程用到梯队 {t}，但 tiers 里没有定义")
+
+    # notes 指向的笔记文件夹必须已提交进公开仓：网页上「看中文笔记」直接链到 GitHub，
+    # 无许可课程的笔记只在本地、被 .gitignore 挡着，写进来就是一个 404 链接
+    for c in files["courses"]["courses"]:
+        notes = c.get("notes")
+        if notes is None:
+            continue
+        tracked = subprocess.run(["git", "-C", str(REPO), "ls-files", "--", notes + "/README.md"],
+                                 capture_output=True, text=True).stdout.strip()
+        if not tracked:
+            fail(f'课程 {c["id"]} 的 notes 指向 {notes}，但这个文件夹没有提交进仓库（或缺 README.md）')
 
     # knowledge → courses 引用
     for k in files["knowledge"]["knowledge"]:

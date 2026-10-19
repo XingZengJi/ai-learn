@@ -1,13 +1,20 @@
-/* 知识点详情与测验弹窗：详情 → 逐题作答 → 全对自动点亮（记在本浏览器的「我的星图」） */
+/* 知识点详情与测验弹窗：详情 → 逐题作答 → 全对自动点亮（记在本浏览器的「我的星图」）；
+ * 另有错题复习：从错题本里抽题来做，答对就移出错题本，不影响点亮 */
 (function () {
   "use strict";
 
   const STATUS_TEXT = { done: "已点亮", doing: "进行中", todo: "未点亮" };
 
   let modal, panel, closeBtn;
-  let ctx = null; /* 每次 open 由 app.js 注入：{ k, course, color, quizState, quiz, state, readOnly, onGoMine, passedDate, onPass, onTogglePreview } */
+  /* 每次 open 由 app.js 注入：
+   *   { k, course, color, quizState, quiz, state, readOnly, learnUrl, notesUrl, wrongCount,
+   *     onGoMine, passedDate, onPass, onToggleStar, onAnswer, reportUrl, nextStar, onNext, onReview }
+   * 错题复习走 review()：{ review: true, items, onAnswer, reportUrl, wrongTotal, onMore } */
+  let ctx = null;
   let opener = null; /* 打开弹窗前的焦点所在，关闭时还回去，键盘用户不会被甩回页首 */
-  let run = null; /* 一次测验的进行状态：{ idx, wrong[], order[][] } */
+  /* 一轮作答的进行状态：{ items: [{ k, q, qIdx }], idx, wrong[], order[][] }。
+   * 完整测验和错题复习共用这一套，区别只在 items 从哪来、做完怎么结算 */
+  let run = null;
   let pendingCelebrate = null; /* 刚测验通过的知识点 id，等弹窗关闭后在那颗星周围撒花 */
 
   function init() {
@@ -21,19 +28,29 @@
     });
   }
 
-  function open(options) {
+  function show(options) {
     if (!modal) init();
-    /* 题库加载完会原地再 open 一次，那时焦点已在弹窗里，不能覆盖 */
+    /* 题库加载完、或者从结果页直接去下一颗星，都会在弹窗开着时再 open 一次，那时焦点已在弹窗里，不能覆盖 */
     if (modal.hidden) opener = document.activeElement;
     ctx = options;
     run = null;
     modal.hidden = false;
     document.body.style.overflow = "hidden";
+  }
+
+  function open(options) {
+    show(options);
     renderDetail();
     closeBtn.focus();
   }
 
+  function review(options) {
+    show(options);
+    startRun(options.items);
+  }
+
   function close() {
+    if (!modal || modal.hidden) return;
     modal.hidden = true;
     document.body.style.overflow = "";
     ctx = null;
@@ -42,6 +59,31 @@
     opener = null;
     /* 弹窗关掉、星星露出来之后才撒花——否则纸屑全被弹窗盖住 */
     if (pendingCelebrate) { const kid = pendingCelebrate; pendingCelebrate = null; celebrateAtStar(kid); }
+  }
+
+  function button(text, primary, onClick) {
+    const b = document.createElement("button");
+    b.className = "kd-btn" + (primary ? " primary" : "");
+    b.type = "button";
+    b.textContent = text;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  /* 「去学这门课」「看中文笔记」：答不上来时得有地方可去 */
+  function learnLinks() {
+    const row = document.createElement("p");
+    row.className = "kd-links";
+    [[ctx.learnUrl, "去学这门课 ↗"], [ctx.notesUrl, "看中文笔记 ↗"]].forEach(([href, text]) => {
+      if (!href) return;
+      const a = document.createElement("a");
+      a.href = href;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = text;
+      row.appendChild(a);
+    });
+    return row;
   }
 
   /* ---------- 详情视图 ---------- */
@@ -72,18 +114,14 @@
       return;
     }
     panel.appendChild(sum);
+    panel.appendChild(learnLinks());
 
     const foot = document.createElement("div");
     foot.className = "kd-actions";
 
     if (ctx.readOnly) {
       /* 看别人分享的星图时不能在这里答题，否则成绩记到谁头上说不清 */
-      const go = document.createElement("button");
-      go.className = "kd-btn primary";
-      go.type = "button";
-      go.textContent = "去我的星图测验";
-      go.addEventListener("click", ctx.onGoMine);
-      foot.appendChild(go);
+      foot.appendChild(button("去我的星图测验", true, ctx.onGoMine));
       const hint = document.createElement("p");
       hint.className = "kd-hint";
       hint.textContent = "这是别人的星图，测验成绩只记在你自己的星图上";
@@ -96,14 +134,11 @@
         ok.textContent = "✓ 已通过测验 · " + passed;
         foot.appendChild(ok);
       }
-      const btn = document.createElement("button");
-      btn.className = "kd-btn primary";
-      btn.type = "button";
-      btn.textContent =
-        (st === "done" ? "温习测验" : passed ? "重新测验" : "开始测验") +
-        "（" + quiz.questions.length + " 题）";
-      btn.addEventListener("click", startQuiz);
-      foot.appendChild(btn);
+      foot.appendChild(button(
+        (st === "done" ? "温习测验" : passed ? "重新测验" : "开始测验") + "（" + quiz.questions.length + " 题）",
+        true, () => startRun(quiz.questions.map((q, i) => ({ k: k, q: q, qIdx: i })))));
+      const nWrong = ctx.wrongCount();
+      if (nWrong) foot.appendChild(button("只练这里的错题（" + nWrong + " 题）", false, ctx.onReview));
       if (st !== "done" && !passed) {
         const hint = document.createElement("p");
         hint.className = "kd-hint";
@@ -112,17 +147,12 @@
       }
     } else if (st !== "done") {
       /* 题库待补充的知识点：保留直接点亮 */
-      const btn = document.createElement("button");
-      btn.className = "kd-btn";
-      btn.type = "button";
-      btn.textContent = "直接点亮";
-      btn.addEventListener("click", () => { ctx.onTogglePreview(); renderDetail(); });
-      foot.appendChild(btn);
+      foot.appendChild(button("直接点亮", false, () => { ctx.onToggleStar(); renderDetail(); }));
     }
     panel.appendChild(foot);
   }
 
-  /* ---------- 测验视图 ---------- */
+  /* ---------- 作答视图 ---------- */
   function shuffled(n) {
     const a = Array.from({ length: n }, (_, i) => i);
     for (let i = a.length - 1; i > 0; i--) {
@@ -132,22 +162,22 @@
     return a;
   }
 
-  function startQuiz() {
-    run = { idx: 0, wrong: [], order: ctx.quiz.questions.map(q => shuffled(q.options.length)) };
+  function startRun(items) {
+    run = { items: items, idx: 0, wrong: [], order: items.map(it => shuffled(it.q.options.length)) };
     renderQuestion();
   }
 
   function renderQuestion() {
-    const qs = ctx.quiz.questions;
-    const q = qs[run.idx];
+    const item = run.items[run.idx];
+    const q = item.q;
     const order = run.order[run.idx];
     panel.textContent = "";
 
     const head = document.createElement("div");
     head.className = "kq-head";
     head.innerHTML =
-      '<span class="kq-progress mono">' + (run.idx + 1) + " / " + qs.length + "</span>" +
-      '<h2 id="k-modal-title" class="kq-title">' + ctx.k.name + " · 测验</h2>";
+      '<span class="kq-progress mono">' + (run.idx + 1) + " / " + run.items.length + "</span>" +
+      '<h2 id="k-modal-title" class="kq-title">' + item.k.name + (ctx.review ? " · 错题复习" : " · 测验") + "</h2>";
     panel.appendChild(head);
 
     const card = document.createElement("div");
@@ -177,12 +207,13 @@
         answered = true;
         const right = origIdx === q.answer;
         if (!right) run.wrong.push(run.idx);
+        ctx.onAnswer(item.k.id, item.qIdx, right); /* 记进 / 移出错题本 */
         opts.querySelectorAll(".kq-opt").forEach((b, bi) => {
           b.disabled = true;
           if (order[bi] === q.answer) b.classList.add("correct");
         });
         if (!right) btn.classList.add("wrong");
-        showExplain(card, right, q.explain);
+        showExplain(card, right, item);
       });
       opts.appendChild(btn);
     });
@@ -190,22 +221,26 @@
     panel.appendChild(card);
   }
 
-  function showExplain(card, right, explain) {
+  function showExplain(card, right, item) {
     const box = document.createElement("div");
     box.className = "kq-explain" + (right ? "" : " wrong");
     const verdict = document.createElement("strong");
     verdict.textContent = right ? "✓ 答对了" : "✗ 答错了";
     box.appendChild(verdict);
-    box.appendChild(document.createTextNode(explain));
+    box.appendChild(document.createTextNode(item.q.explain));
+    /* 题目本身有错时给访客一个出口：直接去 GitHub 提 Issue，题干和位置都替他填好 */
+    const report = document.createElement("a");
+    report.className = "kq-report";
+    report.href = ctx.reportUrl(item.k, item.qIdx);
+    report.target = "_blank";
+    report.rel = "noopener";
+    report.textContent = "这题有问题？去反馈 ↗";
+    box.appendChild(report);
     card.appendChild(box);
 
-    const next = document.createElement("button");
-    next.className = "kd-btn primary";
-    next.type = "button";
-    const last = run.idx === ctx.quiz.questions.length - 1;
-    next.textContent = last ? "查看结果" : "下一题";
-    next.addEventListener("click", () => {
-      if (last) renderResult();
+    const last = run.idx === run.items.length - 1;
+    const next = button(last ? "查看结果" : "下一题", true, () => {
+      if (last) (ctx.review ? renderReviewResult : renderResult)();
       else { run.idx++; renderQuestion(); }
     });
     card.appendChild(next);
@@ -213,7 +248,7 @@
   }
 
   function renderResult() {
-    const total = ctx.quiz.questions.length;
+    const total = run.items.length;
     const nWrong = run.wrong.length;
     panel.textContent = "";
     const box = document.createElement("div");
@@ -230,30 +265,39 @@
           ? '<p class="kq-note">这颗星早已点亮，温习成功 🎓</p>'
           : '<p class="kq-note">这颗星<strong>已点亮</strong>，记录保存在这个浏览器里。' +
             '点顶部的「分享我的星图」，可以生成链接或图片。</p>');
-      const done = document.createElement("button");
-      done.className = "kd-btn primary";
-      done.type = "button";
-      done.textContent = "完成";
-      done.addEventListener("click", close);
-      box.appendChild(done);
+      /* 趁热打铁：直接去推荐的下一颗星；撒花留到最后关弹窗时，在刚点亮的这颗周围放 */
+      const nextK = ctx.nextStar();
+      if (nextK) box.appendChild(button("下一颗：" + nextK.name + " →", true, () => ctx.onNext(nextK)));
+      box.appendChild(button("完成", !nextK, close));
     } else {
       box.innerHTML =
         '<h2 id="k-modal-title">答对 ' + (total - nWrong) + " / " + total + " 题</h2>" +
         '<p class="kq-note">第 ' + run.wrong.map(i => i + 1).join("、") +
-        " 题答错了。需要全对才能点亮——再来一次！</p>";
-      const retry = document.createElement("button");
-      retry.className = "kd-btn primary";
-      retry.type = "button";
-      retry.textContent = "再来一次";
-      retry.addEventListener("click", startQuiz);
-      const back = document.createElement("button");
-      back.className = "kd-btn";
-      back.type = "button";
-      back.textContent = "回到详情";
-      back.addEventListener("click", renderDetail);
-      box.appendChild(retry);
-      box.appendChild(back);
+        " 题答错了，已记进错题本。需要全对才能点亮——再来一次！</p>";
+      box.appendChild(button("再来一次", true, () => startRun(run.items)));
+      box.appendChild(button("回到详情", false, renderDetail));
+      const links = learnLinks();
+      if (links.childNodes.length) {
+        links.insertBefore(document.createTextNode("没把握的话先去补一补："), links.firstChild);
+        box.appendChild(links);
+      }
     }
+    panel.appendChild(box);
+  }
+
+  function renderReviewResult() {
+    const total = run.items.length;
+    const nRight = total - run.wrong.length;
+    const left = ctx.wrongTotal();
+    panel.textContent = "";
+    const box = document.createElement("div");
+    box.className = "kq-result";
+    box.innerHTML =
+      '<h2 id="k-modal-title">复习完成：答对 ' + nRight + " / " + total + "</h2>" +
+      '<p class="kq-note">' + (nRight ? "答对的 " + nRight + " 题已移出错题本。" : "") +
+      (left ? "错题本里还有 " + left + " 题。" : "错题本已经清空 🎉") + "</p>";
+    if (left) box.appendChild(button("继续复习", true, ctx.onMore));
+    box.appendChild(button("完成", !left, close));
     panel.appendChild(box);
   }
 
@@ -317,8 +361,8 @@
 
   /* 当前弹窗里的知识点 id，没开为 null；app.js 等题库到了用它判断要不要原地刷新 */
   function currentId() {
-    return ctx ? ctx.k.id : null;
+    return ctx && ctx.k ? ctx.k.id : null; /* 错题复习不属于某一颗星，没有 k */
   }
 
-  window.Quiz = { open: open, currentId: currentId };
+  window.Quiz = { open: open, review: review, close: close, currentId: currentId };
 })();

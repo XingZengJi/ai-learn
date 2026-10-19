@@ -14,8 +14,8 @@
     }
   },
   "courses": [
-    { "id": "c01", "order": 1, "en": "AI Foundations", "cn": "AI 基础", "tier": 1, "url": "https://academy.openai.com/pages/courses", "summary": "理解 AI 与大语言模型的原理和局限，学会用清晰提示、上下文与人工审查驾驭 ChatGPT", "prereq": [] },
-    { "id": "c02", "order": 2, "en": "Applied AI Foundations", "cn": "应用 AI 基础", "tier": 1, "url": "https://academy.openai.com/pages/courses", "summary": "把重复任务改造成带检查点的可复用工作流，课程产出一份你自己的会议工作流包", "prereq": ["c01"] },
-    { "id": "c03", "order": 3, "en": "Agents and Workflows", "cn": "智能体与工作流", "tier": 1, "url": "https://academy.openai.com/pages/courses", "summary": "从「提问」升级到「派活」：给 Agent 上下文与边界，指挥它完成多步骤工作并沉淀为可复用技能", "prereq": ["c02"] }
+    { "id": "c01", "order": 1, "en": "AI Foundations", "cn": "AI 基础", "tier": 1, "url": "https://academy.openai.com/pages/courses", "notes": "Course/Codex/01AIFound", "summary": "理解 AI 与大语言模型的原理和局限，学会用清晰提示、上下文与人工审查驾驭 ChatGPT", "prereq": [] },
+    { "id": "c02", "order": 2, "en": "Applied AI Foundations", "cn": "应用 AI 基础", "tier": 1, "url": "https://academy.openai.com/pages/courses", "notes": "Course/Codex/02AppliedAIF", "summary": "把重复任务改造成带检查点的可复用工作流，课程产出一份你自己的会议工作流包", "prereq": ["c01"] },
+    { "id": "c03", "order": 3, "en": "Agents and Workflows", "cn": "智能体与工作流", "tier": 1, "url": "https://academy.openai.com/pages/courses", "notes": "Course/Codex/03AgentsWF", "summary": "从「提问」升级到「派活」：给 Agent 上下文与边界，指挥它完成多步骤工作并沉淀为可复用技能", "prereq": ["c02"] }
   ]
 }

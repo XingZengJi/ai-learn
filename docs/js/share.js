@@ -157,7 +157,8 @@
     actions.appendChild(imgBtn);
     body.appendChild(actions);
 
-    const note = el("p", "kd-hint sh-note", "打开链接的人看到的是你现在的星图；他们答题点亮的只会记在自己的星图上。");
+    const note = el("p", "kd-hint sh-note", "打开链接的人看到的是你现在的星图；他们答题点亮的只会记在自己的星图上。" +
+      "换手机或电脑时，在新设备上打开这个链接，点顶部的「存为我的星图」，进度就带过去了。");
     body.appendChild(note);
     const imgArea = el("div", "sh-image");
     body.appendChild(imgArea);
