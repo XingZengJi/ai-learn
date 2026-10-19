@@ -291,7 +291,7 @@
       const t = el("text", { x: 24, y: rg.y, class: "region-label" });
       t.textContent = rg.label;
       svg.appendChild(t);
-      const tick = el("line", { x1: 24, y1: rg.y + 8, x2: 210, y2: rg.y + 8, stroke: tierColor(data, rg.tier), "stroke-width": 2, opacity: 0.5 });
+      const tick = el("line", { x1: 24, y1: rg.y + 8, x2: 210, y2: rg.y + 8, stroke: tierColor(data, rg.tier), "stroke-width": 2, opacity: 0.9 });
       svg.appendChild(tick);
     });
 

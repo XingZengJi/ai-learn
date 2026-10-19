@@ -106,7 +106,7 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 
 .region-label {
   font-family: var(--font-mono); font-size: 12px;
-  letter-spacing: 0.3em; fill: var(--ink-3);
+  letter-spacing: 0.3em; fill: #b8c2d6; /* 天区标题：介于课程名与计数之间的亮度（share.js 的 SVG_STYLE 同值） */
 }
 .constellation-line { stroke: #2a3454; }
 .star-hit { fill: transparent; }
