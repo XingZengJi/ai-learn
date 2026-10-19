@@ -4,10 +4,18 @@ import json
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DATA_ROOT = REPO / "docs" / "data"
+# 正确项的显示宽度超过最长干扰项的这个倍数就报错：选项会乱序，长度成了唯一残留线索，挑最长的就能蒙对
+ANSWER_LEN_RATIO = 1.3
+
+
+def display_width(s):
+    """汉字等全角字符算 2，其余算 1，接近读者眼里的长短"""
+    return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in s)
 
 
 def check_provider(data_dir, counts):
@@ -89,6 +97,7 @@ def check_provider(data_dir, counts):
 
     # quiz：summary 非空；questions 允许为空数组（题库待补充）；有题则每题 4 选项、answer 合法、有题干和解析
     n_questions = 0
+    n_longest = 0  # 正确项恰好最长的题数，只做提示
     for kid, v in files["quiz"].items():
         if kid.startswith("_"):
             continue
@@ -107,9 +116,20 @@ def check_provider(data_dir, counts):
                 fail(f"quiz {kid} 第 {i} 题 answer 下标越界或类型错误")
             if not q.get("explain", "").strip():
                 fail(f"quiz {kid} 第 {i} 题缺 explain")
+            opts = q.get("options", [])
+            if len(opts) == 4 and isinstance(q.get("answer"), int) and 0 <= q["answer"] < 4:
+                widths = [display_width(o) for o in opts]
+                right = widths[q["answer"]]
+                longest_wrong = max(w for j, w in enumerate(widths) if j != q["answer"])
+                n_longest += right > longest_wrong
+                if right > longest_wrong * ANSWER_LEN_RATIO:
+                    fail(f"quiz {kid} 第 {i} 题正确项明显比干扰项长（{right} : {longest_wrong}），"
+                         "把理由挪进 explain 或补长干扰项")
 
     quiz_covered = sum(1 for k in files["quiz"] if not k.startswith("_"))
     print(f"  知识点 {len(kids)} · 课程 {len(course_ids)} · 项目 {len(pids)} · 概要覆盖 {quiz_covered} 个知识点 / 共 {n_questions} 题")
+    if n_questions:
+        print(f"  正确项是最长选项的题占 {n_longest / n_questions:.0%}（四选一随机约 25%，越接近越好）")
     counts[data_dir.name] = {"courses": len(course_ids), "knowledge": len(kids), "projects": len(pids), "questions": n_questions}
     return len(errors)
 

@@ -418,12 +418,20 @@
   }
 
   /* 学习助手条：下一颗星 + 错题本，只在我的星图出现 */
+  /* 苹果的 Safari（iPhone / iPad 上所有浏览器都是它的内核）会清掉 7 天没打开过的网站存的数据，进度全在浏览器里，跟着一起丢 */
+  const BACKUP_HINT_KEY = "cc-map-backup-hint";
+  function isAppleWebKit() {
+    const ua = navigator.userAgent || "";
+    return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua));
+  }
+
   function renderStudyBar() {
     const bar = document.getElementById("study-bar");
     bar.textContent = "";
     const k = state.next && state.data.kById[state.next];
     const nWrong = state.view === "mine" ? wrongTotal() : 0;
-    bar.hidden = state.view !== "mine" || (!k && !nWrong);
+    const backupHint = state.view === "mine" && countStats().stars > 0 && isAppleWebKit() && !storeGet(BACKUP_HINT_KEY);
+    bar.hidden = state.view !== "mine" || (!k && !nWrong && !backupHint);
     if (bar.hidden) return;
     if (k) {
       const course = state.data.courses.find(c => c.id === k.course);
@@ -431,6 +439,16 @@
       bar.appendChild(barButton((fresh ? "✦ 从这里开始：" : "✦ 下一颗星：") + course.cn + " · " + k.name, "next-btn", () => openKnowledge(k)));
     }
     if (nWrong) bar.appendChild(barButton("错题本 · " + nWrong + " 题", "wrong-btn", () => startReview(null)));
+    if (backupHint) {
+      const hint = document.createElement("div");
+      hint.className = "backup-hint";
+      const text = document.createElement("span");
+      text.textContent = "苹果设备上的 Safari 可能清掉 7 天没打开的网站数据，进度会跟着丢。建议存一份分享链接当备份。";
+      hint.appendChild(text);
+      hint.appendChild(barButton("存一份分享链接", "backup-btn", openShare));
+      hint.appendChild(barButton("知道了", "", () => { storeSet(BACKUP_HINT_KEY, today()); renderStudyBar(); }));
+      bar.appendChild(hint);
+    }
   }
 
   /* ---------- 成就：只增不减，拿到时弹一条提示 ---------- */

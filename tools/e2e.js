@@ -39,6 +39,7 @@ async function makePage(provider, hash, opts = {}) {
   const { window } = dom;
   if (provider) window.localStorage.setItem("cc-map-provider", provider);
   for (const [k, v] of Object.entries(opts.storage || {})) window.localStorage.setItem(k, JSON.stringify(v));
+  if (opts.ua) Object.defineProperty(window.navigator, "userAgent", { get: () => opts.ua });
   if (opts.touch) {
     const media = { narrow: opts.touch === "phone", listeners: [] };
     media.fire = () => media.listeners.forEach(f => f());
@@ -338,6 +339,20 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("视图条提示存进了几颗", docI.getElementById("view-bar-text").textContent.includes("已把 2 颗星、1 个项目存进你的星图"));
   check("带进来的进度只静默记成就，不弹提示", docI.getElementById("toast").hidden &&
     !!JSON.parse(winI.localStorage.getItem("cc-map-achieved") || "{}")["first-project"]);
+
+  console.log("— 苹果设备：提醒备份进度 —");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const winApple = await makePage(null, "", { ua: IPHONE, storage: { "cc-map-preview": { "knowledge:k0101": true } } });
+  const hintApple = () => winApple.document.querySelector("#study-bar .backup-hint");
+  check("iPhone 上有点亮记录时显示备份提醒", !!hintApple() && /7 天/.test(hintApple().textContent));
+  hintApple().querySelector(".backup-btn").click();
+  check("点「存一份分享链接」打开分享弹窗", !winApple.document.getElementById("share-modal").hidden);
+  [...hintApple().querySelectorAll("button")].find(b => b.textContent === "知道了").click();
+  check("点「知道了」后提醒消失并记住", !hintApple() && !!winApple.localStorage.getItem("cc-map-backup-hint"));
+  const winApple2 = await makePage(null, "", { ua: IPHONE });
+  check("还没点亮任何星星时不提醒", !winApple2.document.querySelector("#study-bar .backup-hint"));
+  const winApple3 = await makePage(null, "", { storage: { "cc-map-preview": { "knowledge:k0101": true } } });
+  check("非苹果设备不提醒", !winApple3.document.querySelector("#study-bar .backup-hint"));
 
   console.log("— 老访客刷新页面：测验记录读得回来 —");
   /* 曾经 PASSED_KEY 定义在 state 之后，初始化时读取报错被 try/catch 吞掉，刷新后通过记录全丢 */

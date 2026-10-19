@@ -184,6 +184,12 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .study-bar button:hover { border-color: var(--ink-3); }
 .study-bar .next-btn { border-color: var(--t1); }
 .study-bar .wrong-btn { border-color: var(--bad); color: #f2b8c1; }
+.backup-hint {
+  flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 8px;
+  font-size: 12.5px; color: var(--ink-2); text-align: center;
+}
+.study-bar .backup-hint button { padding: 4px 12px; font-size: 12.5px; }
+.study-bar .backup-btn { border-color: var(--t3); }
 
 /* ============ 项目视图 ============ */
 .projects-track {
