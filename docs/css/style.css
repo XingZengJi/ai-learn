@@ -170,7 +170,7 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .dot.todo { background: var(--star-todo); border: 1px solid var(--star-todo-stroke); }
 .lg.hint { color: var(--ink-3); }
 
-/* ============ 学习助手条：下一颗星 + 错题本 ============ */
+/* ============ 学习助手条：下一颗星 + 到期温习 + 错题本 ============ */
 .study-bar {
   display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
   max-width: 920px; margin: 0 auto 12px; padding: 0 16px;
@@ -184,6 +184,7 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .study-bar button:hover { border-color: var(--ink-3); }
 .study-bar .next-btn { border-color: var(--t1); }
 .study-bar .wrong-btn { border-color: var(--bad); color: #f2b8c1; }
+.study-bar .due-btn { border-color: var(--t2); }
 .backup-hint {
   flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 8px;
   font-size: 12.5px; color: var(--ink-2); text-align: center;
@@ -227,6 +228,13 @@ main { max-width: min(1760px, 96vw); margin: 0 auto; padding: 0 16px; }
 .project-toggle { margin-top: 10px; }
 
 /* ============ 列表视图 ============ */
+.list-search { max-width: 1150px; margin: 20px auto 0; }
+.list-search input {
+  width: 100%; box-sizing: border-box; padding: 9px 14px; font-size: 16px; font-family: inherit;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px;
+}
+.list-search input:focus { outline: none; border-color: var(--t1); }
+.list-empty { color: var(--ink-3); text-align: center; margin: 24px 0; }
 .list-root { max-width: 1150px; margin: 20px auto 40px; display: grid; gap: 28px; }
 @media (min-width: 1400px) {
   .list-root { grid-template-columns: 1fr 1fr; align-items: start; max-width: 1560px; }

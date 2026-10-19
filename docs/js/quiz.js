@@ -1,5 +1,5 @@
 /* 知识点详情与测验弹窗：详情 → 逐题作答 → 全对自动点亮（记在本浏览器的「我的星图」）；
- * 另有错题复习：从错题本里抽题来做，答对就移出错题本，不影响点亮 */
+ * 另有复习（错题复习、到期温习）：从 app.js 挑好的题里逐题作答，不影响点亮 */
 (function () {
   "use strict";
 
@@ -8,8 +8,9 @@
   let modal, panel, closeBtn;
   /* 每次 open 由 app.js 注入：
    *   { k, course, color, quizState, quiz, state, readOnly, learnUrl, notesUrl, wrongCount,
-   *     onGoMine, passedDate, onPass, onToggleStar, onAnswer, reportUrl, nextStar, onNext, onReview }
-   * 错题复习走 review()：{ review: true, items, onAnswer, reportUrl, wrongTotal, onMore } */
+   *     onGoMine, passedDate, onPass, onRefresh, onToggleStar, onAnswer, reportUrl, nextStar, onNext, onReview }
+   * 复习走 review()：{ review: "错题复习" | "温习", items, onAnswer, reportUrl, summarize, onMore }
+   *   summarize({ total, right, items, wrong }) 返回 { note, more }：结算页的说明文字、要不要给「继续复习」 */
   let ctx = null;
   let opener = null; /* 打开弹窗前的焦点所在，关闭时还回去，键盘用户不会被甩回页首 */
   /* 一轮作答的进行状态：{ items: [{ k, q, qIdx }], idx, wrong[], order[][] }。
@@ -177,7 +178,7 @@
     head.className = "kq-head";
     head.innerHTML =
       '<span class="kq-progress mono">' + (run.idx + 1) + " / " + run.items.length + "</span>" +
-      '<h2 id="k-modal-title" class="kq-title">' + item.k.name + (ctx.review ? " · 错题复习" : " · 测验") + "</h2>";
+      '<h2 id="k-modal-title" class="kq-title">' + item.k.name + " · " + (ctx.review || "测验") + "</h2>";
     panel.appendChild(head);
 
     const card = document.createElement("div");
@@ -257,6 +258,7 @@
     if (!nWrong) {
       const alreadyDone = ctx.state.statusOf("knowledge", ctx.k.id) === "done";
       if (!alreadyDone) ctx.onPass(); /* 记录通过 + 点亮 + 重绘星图 */
+      else if (ctx.onRefresh) ctx.onRefresh(); /* 温习全对：重新计算下次该温习的时间 */
       pendingCelebrate = ctx.k.id; /* 关闭弹窗那一刻，在这颗星周围撒花 */
       box.innerHTML =
         '<div class="kq-star" style="color:' + ctx.color + '">✦</div>' +
@@ -288,16 +290,17 @@
   function renderReviewResult() {
     const total = run.items.length;
     const nRight = total - run.wrong.length;
-    const left = ctx.wrongTotal();
+    const res = ctx.summarize({ total: total, right: nRight, items: run.items, wrong: run.wrong });
     panel.textContent = "";
     const box = document.createElement("div");
     box.className = "kq-result";
-    box.innerHTML =
-      '<h2 id="k-modal-title">复习完成：答对 ' + nRight + " / " + total + "</h2>" +
-      '<p class="kq-note">' + (nRight ? "答对的 " + nRight + " 题已移出错题本。" : "") +
-      (left ? "错题本里还有 " + left + " 题。" : "错题本已经清空 🎉") + "</p>";
-    if (left) box.appendChild(button("继续复习", true, ctx.onMore));
-    box.appendChild(button("完成", !left, close));
+    box.innerHTML = '<h2 id="k-modal-title">' + ctx.review + "完成：答对 " + nRight + " / " + total + "</h2>";
+    const note = document.createElement("p");
+    note.className = "kq-note";
+    note.textContent = res.note;
+    box.appendChild(note);
+    if (res.more) box.appendChild(button("继续复习", true, ctx.onMore));
+    box.appendChild(button("完成", !res.more, close));
     panel.appendChild(box);
   }
 

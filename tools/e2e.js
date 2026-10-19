@@ -390,6 +390,71 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("再复习一轮全对，错题本清空", modalR.textContent.includes("错题本已经清空") &&
     docR.getElementById("study-bar").querySelector(".wrong-btn") === null);
 
+  console.log("— 到期温习：点亮满 30 天的星 —");
+  const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const winD = await makePage(null, "", { storage: {
+    "cc-map-preview": { "knowledge:k0101": true, "knowledge:k0102": true, "knowledge:k0103": true },
+    "cc-map-quiz-passed": { k0101: daysAgo(40), k0102: daysAgo(5) } /* k0103 没有通过日期（导入的），不参与 */
+  } });
+  const docD = winD.document, modalD = docD.getElementById("k-modal");
+  const dueBtn = () => docD.querySelector("#study-bar .due-btn");
+  check("学习助手条显示 1 颗星到期", !!dueBtn() && dueBtn().textContent.includes("1 颗星"));
+  const answerD = (right) => {
+    const q = quiz.k0101.questions.find(x => x.q === modalD.querySelector(".kq-q").textContent);
+    const opts = [...modalD.querySelectorAll(".kq-opt")];
+    (right ? opts.find(o => o.textContent.includes(q.options[q.answer])) : opts.find(o => !o.textContent.includes(q.options[q.answer]))).click();
+    [...modalD.querySelectorAll(".kd-btn")].find(b => /下一题|查看结果/.test(b.textContent)).click();
+  };
+  dueBtn().click();
+  await wait(20);
+  check("温习从到期的那颗星抽 1 题", !modalD.hidden && modalD.textContent.includes("温习") &&
+    modalD.querySelector(".kq-progress").textContent === "1 / 1");
+  answerD(false);
+  check("答错：题进错题本，星还留在温习清单", modalD.textContent.includes("已收进错题本") &&
+    !JSON.parse(winD.localStorage.getItem("cc-map-reviewed") || "{}").k0101 &&
+    !!JSON.parse(winD.localStorage.getItem("cc-map-wrong")).k0101);
+  [...modalD.querySelectorAll(".kd-btn")].find(b => b.textContent === "继续复习").click();
+  await wait(20);
+  answerD(true);
+  check("答对：记下温习日期，30 天后再来", modalD.textContent.includes("30 天后") &&
+    JSON.parse(winD.localStorage.getItem("cc-map-reviewed")).k0101 === todayStr && !dueBtn());
+  check("温习不改点亮日期", JSON.parse(winD.localStorage.getItem("cc-map-quiz-passed")).k0101 === daysAgo(40));
+
+  const winD2 = await makePage(null, "", { storage: {
+    "cc-map-preview": { "knowledge:k0101": true }, "cc-map-quiz-passed": { k0101: daysAgo(40) }
+  } });
+  const docD2 = winD2.document, modalD2 = docD2.getElementById("k-modal");
+  [...docD2.querySelectorAll("#list-root .k-item")].find(b => b.textContent.includes(knowledge.find(k => k.id === "k0101").name)).click();
+  await wait(20);
+  [...modalD2.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("温习测验")).click();
+  quiz.k0101.questions.forEach(() => {
+    const q = quiz.k0101.questions.find(x => x.q === modalD2.querySelector(".kq-q").textContent);
+    [...modalD2.querySelectorAll(".kq-opt")].find(o => o.textContent.includes(q.options[q.answer])).click();
+    [...modalD2.querySelectorAll(".kd-btn")].find(b => /下一题|查看结果/.test(b.textContent)).click();
+  });
+  check("在详情里整套温习全对，也算温习过", JSON.parse(winD2.localStorage.getItem("cc-map-reviewed") || "{}").k0101 === todayStr &&
+    !docD2.querySelector("#study-bar .due-btn"));
+
+  console.log("— 列表页搜索 —");
+  const winS2 = await makePage(null);
+  const docS2 = winS2.document;
+  const search = q => { const el = docS2.getElementById("list-search"); el.value = q; el.dispatchEvent(new winS2.Event("input")); };
+  const shownK = () => [...docS2.querySelectorAll("#list-root .k-item")].map(b => b.textContent);
+  const kSample = knowledge.find(k => k.id === "k0201");
+  search(kSample.name);
+  check("按知识点名搜到这一条，所在课程自动展开", shownK().some(t => t.includes(kSample.name)) &&
+    shownK().length < knowledge.length && [...docS2.querySelectorAll("#list-root details.course-k")].every(d => d.open));
+  const cSample = readJSON("data/anthropic/courses.json").courses.find(c => c.id === "c02");
+  search(cSample.cn);
+  check("按课程名搜到整门课的知识点", shownK().length >= knowledge.filter(k => k.course === "c02").length);
+  search("MCP");
+  check("英文关键词不分大小写", shownK().length > 0 && shownK().length === (search("mcp"), shownK().length));
+  search("完全不存在的词zzz");
+  check("搜不到时给出提示", /没有找到/.test(docS2.getElementById("list-root").textContent));
+  search("");
+  check("清空搜索恢复完整列表和成就", shownK().length === knowledge.length && /成就/.test(docS2.getElementById("list-root").textContent));
+
   console.log("— 题目里的尖括号原样显示（k1106 第 2 题）—");
   const winT = await makePage(null);
   const docT = winT.document;

@@ -51,7 +51,8 @@
   /* 下面三份记录「清空」都不清：清空只是让星图重新变暗，答过的题、错过的题、拿到的成就仍算数 */
   const PASSED_KEY = "cc-map-quiz-passed" + P.storageSuffix;   /* 测验通过 { k0101: "2026-07-11" } */
   const WRONG_KEY = "cc-map-wrong" + P.storageSuffix;          /* 错题本 { k0101: [0, 2] }，值是题号（quiz.json 里的下标） */
-  const ACHIEVED_KEY = "cc-map-achieved" + P.storageSuffix;    /* 成就 { "first-star": "2026-10-18" } */
+  const ACHIEVED_KEY = "cc-map-achieved" + P.storageSuffix;
+  const REVIEWED_KEY = "cc-map-reviewed" + P.storageSuffix;    /* 成就 { "first-star": "2026-10-18" } */
   /* 这些键必须定义在 state 之前：state 初始化时就要读它们。曾经 PASSED_KEY 写在 state 后面，
    * 读取时撞上「先用后定义」的报错又被 try/catch 吞掉，刷新后测验记录全读不出来 */
   function loadJSON(key) {
@@ -85,7 +86,9 @@
     passed: loadJSON(PASSED_KEY),
     wrong: loadJSON(WRONG_KEY),
     achieved: loadJSON(ACHIEVED_KEY),
+    reviewed: loadJSON(REVIEWED_KEY), /* 已点亮的星最近一次温习全对的日期，和点亮日期分开存 */
     next: null, /* 推荐的下一颗星（知识点 id），renderAll 时算 */
+    search: "", /* 列表页搜索框里的字 */
     statusOf(type, id) {
       const lit = this.view === "shared" ? this.shared.lit : this.preview;
       return lit[type + ":" + id] ? "done" : "todo";
@@ -337,6 +340,7 @@
       onGoMine: () => { goView(""); openKnowledge(k); },
       passedDate: () => state.passed[k.id] || null,
       onToggleStar: () => toggleStar(k.id),
+      onRefresh: () => markReviewed([k.id]),
       onPass: () => {
         state.passed[k.id] = today();
         savePassed();
@@ -390,12 +394,70 @@
       const items = wrongItems(onlyKid).slice(0, REVIEW_BATCH);
       if (!items.length) { Quiz.close(); showToast("错题本是空的", null); return; }
       Quiz.review({
-        review: true,
+        review: "错题复习",
         items: items,
         reportUrl: reportUrl,
         onAnswer: recordAnswer,
-        wrongTotal: wrongTotal,
+        summarize: r => {
+          const left = wrongTotal();
+          return {
+            note: (r.right ? "答对的 " + r.right + " 题已移出错题本。" : "") + (left ? "错题本里还有 " + left + " 题。" : "错题本已经清空 🎉"),
+            more: left > 0
+          };
+        },
         onMore: () => startReview(onlyKid)
+      });
+    }, () => showToast("题目没有加载出来，请检查网络后再试", null));
+  }
+
+  /* ---------- 到期温习：点亮（或上次温习）满 30 天的星，每颗抽一道题再考一次 ---------- */
+  const REVIEW_DAYS = 30;
+  function lastStudied(kid) {
+    const a = state.passed[kid] || "", b = state.reviewed[kid] || "";
+    return a > b ? a : b; /* YYYY-MM-DD 按字符串比较就是按日期比较 */
+  }
+  /* 没有通过日期的星（从分享链接导入、或早年直接点亮的）不知道学了多久，不参与 */
+  function dueStars() {
+    if (state.view !== "mine") return [];
+    const now = Date.parse(today());
+    return state.data.knowledge
+      .filter(k => state.preview["knowledge:" + k.id] && lastStudied(k.id) &&
+        (now - Date.parse(lastStudied(k.id))) / 864e5 >= REVIEW_DAYS)
+      .sort((a, b) => lastStudied(a.id) < lastStudied(b.id) ? -1 : 1);
+  }
+  function markReviewed(kids) {
+    kids.forEach(kid => { state.reviewed[kid] = today(); });
+    saveJSON(REVIEWED_KEY, state.reviewed);
+    renderStudyBar();
+  }
+
+  function startDueReview() {
+    loadQuiz().then(() => {
+      const items = [];
+      dueStars().forEach(k => {
+        const qs = (state.data.quiz[k.id] || {}).questions || [];
+        if (!qs.length || items.length >= REVIEW_BATCH) return;
+        const i = Math.floor(Math.random() * qs.length);
+        items.push({ k: k, q: qs[i], qIdx: i });
+      });
+      if (!items.length) { Quiz.close(); showToast("现在没有到期要温习的星", null); return; }
+      Quiz.review({
+        review: "温习",
+        items: items,
+        reportUrl: reportUrl,
+        onAnswer: recordAnswer,
+        summarize: r => {
+          /* 答对的星重新计时；答错的题照常进错题本，那颗星留在温习清单里 */
+          markReviewed(r.items.filter((it, i) => r.wrong.indexOf(i) < 0).map(it => it.k.id));
+          const left = dueStars().length;
+          return {
+            note: (r.right ? "答对的 " + r.right + " 颗星，" + REVIEW_DAYS + " 天后再来温习。" : "") +
+              (r.wrong.length ? "答错的 " + r.wrong.length + " 题已收进错题本。" : "") +
+              (left ? "还有 " + left + " 颗星等着温习。" : ""),
+            more: left > 0
+          };
+        },
+        onMore: startDueReview
       });
     }, () => showToast("题目没有加载出来，请检查网络后再试", null));
   }
@@ -417,7 +479,7 @@
     return c ? ks(c)[0].id : null;
   }
 
-  /* 学习助手条：下一颗星 + 错题本，只在我的星图出现 */
+  /* 学习助手条：下一颗星 + 到期温习 + 错题本，只在我的星图出现 */
   /* 苹果的 Safari（iPhone / iPad 上所有浏览器都是它的内核）会清掉 7 天没打开过的网站存的数据，进度全在浏览器里，跟着一起丢 */
   const BACKUP_HINT_KEY = "cc-map-backup-hint";
   function isAppleWebKit() {
@@ -430,14 +492,16 @@
     bar.textContent = "";
     const k = state.next && state.data.kById[state.next];
     const nWrong = state.view === "mine" ? wrongTotal() : 0;
+    const nDue = dueStars().length;
     const backupHint = state.view === "mine" && countStats().stars > 0 && isAppleWebKit() && !storeGet(BACKUP_HINT_KEY);
-    bar.hidden = state.view !== "mine" || (!k && !nWrong && !backupHint);
+    bar.hidden = state.view !== "mine" || (!k && !nWrong && !nDue && !backupHint);
     if (bar.hidden) return;
     if (k) {
       const course = state.data.courses.find(c => c.id === k.course);
       const fresh = !countStats().stars;
       bar.appendChild(barButton((fresh ? "✦ 从这里开始：" : "✦ 下一颗星：") + course.cn + " · " + k.name, "next-btn", () => openKnowledge(k)));
     }
+    if (nDue) bar.appendChild(barButton("温习 · " + nDue + " 颗星到期", "due-btn", startDueReview));
     if (nWrong) bar.appendChild(barButton("错题本 · " + nWrong + " 题", "wrong-btn", () => startReview(null)));
     if (backupHint) {
       const hint = document.createElement("div");
@@ -684,6 +748,11 @@
   function renderList() {
     const root = document.getElementById("list-root");
     root.textContent = "";
+    /* 搜索：课程名命中就列出整门课，否则只列名字或概要里含关键词的知识点，命中的课自动展开 */
+    const query = state.search.trim().toLowerCase();
+    const hit = t => (t || "").toLowerCase().indexOf(query) >= 0;
+    const summaryOf = k => (state.data.quiz && state.data.quiz[k.id] || {}).summary;
+    let found = 0;
 
     /* 课程 + 知识点 */
     const secCourse = document.createElement("section");
@@ -691,12 +760,16 @@
     secCourse.innerHTML = "<h2>课程 · 星座</h2>";
     state.data.courses.forEach(c => {
       const ks = state.data.knowledgeByCourse[c.id] || [];
+      const shown = !query || hit(c.cn) || hit(c.en) ? ks : ks.filter(k => hit(k.name) || hit(summaryOf(k)));
+      if (query && !shown.length) return;
+      found += query ? shown.length : 0;
       const litN = ks.filter(k => state.statusOf("knowledge", k.id) === "done").length;
       const cst = courseStatus(c);
       const color = tierColor(c.tier);
 
       const details = document.createElement("details");
       details.className = "course-k";
+      details.open = !!query;
       const summary = document.createElement("summary");
       summary.innerHTML =
         '<div class="list-row">' +
@@ -709,7 +782,7 @@
 
       const kwrap = document.createElement("div");
       kwrap.className = "k-items";
-      ks.forEach(k => {
+      shown.forEach(k => {
         const st = state.statusOf("knowledge", k.id);
         const btn = document.createElement("button");
         btn.className = "k-item";
@@ -724,13 +797,17 @@
       details.appendChild(kwrap);
       secCourse.appendChild(details);
     });
-    root.appendChild(secCourse);
+    if (query) secCourse.querySelector("h2").textContent = "课程 · 星座 · 找到 " + found + " 个知识点";
+    if (!query || found) root.appendChild(secCourse);
 
     /* 项目 */
     const secProj = document.createElement("section");
     secProj.className = "list-section";
     secProj.innerHTML = "<h2>实战项目 · 行星</h2>";
+    let foundP = 0;
     state.data.projects.forEach((p, i) => {
+      if (query && !hit(p.name)) return;
+      foundP++;
       const st = state.statusOf("projects", p.id);
       const row = document.createElement("div");
       row.className = "list-row";
@@ -740,7 +817,17 @@
         '<span class="meta">' + STATUS_TEXT[st] + (st === "done" && state.dateOf("projects", p.id) ? " · " + state.dateOf("projects", p.id) : "") + "</span>";
       secProj.appendChild(row);
     });
-    root.appendChild(secProj);
+    if (foundP) root.appendChild(secProj);
+
+    if (query) {
+      if (!found && !foundP) {
+        const empty = document.createElement("p");
+        empty.className = "list-empty";
+        empty.textContent = "没有找到和「" + state.search.trim() + "」相关的知识点、课程或项目";
+        root.appendChild(empty);
+      }
+      return;
+    }
 
     /* 成就只属于自己的星图 */
     if (state.view !== "mine") return;
@@ -762,6 +849,10 @@
   }
 
   /* ---------- 视图切换 ---------- */
+  function setupSearch() {
+    document.getElementById("list-search").addEventListener("input", e => { state.search = e.target.value; renderList(); });
+  }
+
   function setupTabs() {
     const tabs = document.querySelectorAll('[role="tab"]');
     tabs.forEach(tab => {
@@ -808,7 +899,7 @@
 
   renderChrome();
   loadData()
-    .then(() => { applyView(); checkAchievements(true); setupTabs(); setupZoomBar(); watchCompact(); renderAll(); Heatmap.init(); })
+    .then(() => { applyView(); checkAchievements(true); setupTabs(); setupSearch(); setupZoomBar(); watchCompact(); renderAll(); Heatmap.init(); })
     .catch(err => {
       document.querySelector("main").innerHTML =
         '<p style="text-align:center;color:#9aa5bd;padding:40px">数据加载失败：' + err.message +

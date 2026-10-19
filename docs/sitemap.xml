@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 给搜索引擎的页面清单：在 Google Search Console 里提交 https://xingzengji.github.io/ai-learn/sitemap.xml -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://xingzengji.github.io/ai-learn/</loc></url>
+  <url><loc>https://xingzengji.github.io/ai-learn/?v=openai</loc></url>
+</urlset>
