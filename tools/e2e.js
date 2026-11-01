@@ -735,6 +735,35 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("桌面端用宽屏布局、课程名单行", document.getElementById("starmap").getAttribute("viewBox") === desktopBox &&
     [...document.querySelectorAll("#starmap .course-label")].every(l => l.querySelectorAll("tspan").length === 1));
 
+  /* 宽屏星图的压盖核算：layout.slots 是手写坐标，给某门课补知识点后星座变大，可能压到邻居。
+   * 直接读渲染出来的坐标，不另抄 starmap.js 的公式（抄的公式会和代码慢慢对不上） */
+  console.log("— 宽屏星图：星座之间、课程名之间不压盖（两个厂商）—");
+  const winOD = await makePage("openai");
+  for (const [name, doc] of [["Anthropic", document], ["OpenAI", winOD.document]]) {
+    const svgD = doc.getElementById("starmap");
+    const [, , vw, vh] = svgD.getAttribute("viewBox").split(" ").map(Number);
+    const groups = [...svgD.querySelectorAll("g[data-course]")].map(g => {
+      const label = g.querySelector(".course-label");
+      const cx = +label.getAttribute("x"), y = +label.getAttribute("y");
+      const w = textEm(label.textContent) * 13; /* 宽屏课程名 13 号字、单行；下方 15 单位是计数行 */
+      const stars = [...g.querySelectorAll(".star circle.core")].map(c => [+c.getAttribute("cx"), +c.getAttribute("cy")]);
+      const xs = stars.map(p => p[0]), ys = stars.map(p => p[1]);
+      return { id: g.dataset.course, x0: cx - w / 2, x1: cx + w / 2, y0: y - 13, y1: y + 18, stars,
+        area: [Math.min(...xs) - 10, Math.min(...ys) - 10, Math.max(...xs) + 10, Math.max(...ys) + 10] };
+    });
+    const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    const box = g => [g.x0, g.y0, g.x1, g.y1];
+    const issues = [];
+    groups.forEach((a, i) => groups.forEach((b, j) => {
+      if (a === b) return;
+      if (j > i && hit(box(a), box(b))) issues.push(a.id + "/" + b.id + " 课程名互压");
+      if (j > i && hit(a.area, b.area)) issues.push(a.id + "/" + b.id + " 星座交叠");
+      if (b.stars.some(([x, y]) => x > a.x0 - 4 && x < a.x1 + 4 && y > a.y0 - 4 && y < a.y1 + 4)) issues.push(a.id + " 的课程名压到 " + b.id + " 的星");
+    }));
+    groups.forEach(g => { if (g.x0 < 0 || g.x1 > vw || g.y1 > vh) issues.push(g.id + " 的课程名超出画面"); });
+    check(name + "：" + groups.length + " 个星座互不压盖、不出画面" + (issues.length ? "：" + issues.slice(0, 5).join("，") : ""), issues.length === 0);
+  }
+
   console.log("— 解不开的分享链接 —");
   const winX = await makePage(null, "#s=garbage");
   check("退回我的星图", winX.document.body.dataset.view === "mine");

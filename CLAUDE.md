@@ -11,11 +11,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Course/<厂商>/<NN课程名>/` — 课程笔记（中英对照/中文译述）。厂商层目前有 `Claude/`（Anthropic Skilljar 课程）与 `Codex/`（OpenAI Codex 课程）
 - `notes/` — 学习笔记（费曼输出法）
 - `practice/` — 实践产出（按项目分文件夹，见下）
-- `tools/` — `check-data.py`（零依赖数据校验）、`e2e.js`（jsdom 冒烟测试）、`make-icons.py`（画主屏幕图标，需 Pillow）
+- `tools/` — `verify.sh`（一条命令跑完下面两项）、`check-data.py`（零依赖数据校验）、`e2e.js`（jsdom 冒烟测试）、`make-icons.py`（画主屏幕图标，需 Pillow）、`hooks/`（Claude Code 的 hook 脚本，登记在 `.claude/settings.json`）
 
 ## 常用命令
 
 ```bash
+# 一条命令跑完下面两项（只打印失败项，完整输出在 tools/e2e-last.log）。提交前跑这个；对应 Skill：/verify
+bash tools/verify.sh
+
 # 数据校验：结构 + 交叉引用，两个厂商一起校验。改过 docs/data/ 下任何 JSON 都要跑
 python3 tools/check-data.py
 
@@ -82,7 +85,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 ### 星座大小由知识点数决定，加知识点也可能撑爆布局
 
-`check-data.py` 只校验「课程数 ≤ 槽位数」，**查不出星座之间的视觉碰撞**。星图的几何全部由 `starmap.js` 按该课的星星数 `n` 算出来：
+`check-data.py` 只校验「课程数 ≤ 槽位数」；**星座之间的视觉碰撞由 e2e 查**（「宽屏星图」一段，读渲染出来的坐标逐对检查课程名互压、星座交叠、课程名压到别的星、出画面）。星图的几何全部由 `starmap.js` 按该课的星星数 `n` 算出来：
 
 | 量 | 公式 |
 | --- | --- |
@@ -90,7 +93,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 | 全座点亮的光环 | `n === 1 ? 42 : R + 42` |
 | 课程标签 y | `cy + (n === 1 ? 24 : R * 0.82 + 22)`，其下 15px 还有计数行 |
 
-后果：一门课从 1 个占位知识点扩到 8 个，`R` 就从 0 跳到 80，原本挨得很近的槽位会立刻互相压盖。经验值是**同排间距 ≥ 180、上下排间距 ≥ 200**（还要留出标签带），否则星云交叠、标签压到下一排的星上。**给已有课程大批量补知识点后，务必按上表核算一遍相邻槽位的间距**，不够就重排 `layout.slots` 并调大 `viewBox` 高度——第二、三天区就是这么从 80px 行距重排成 200px、`viewBox` 高度从 1060 加到 1780 的。
+后果：一门课从 1 个占位知识点扩到 8 个，`R` 就从 0 跳到 80，原本挨得很近的槽位会立刻互相压盖。经验值是**同排间距 ≥ 180、上下排间距 ≥ 200**（还要留出标签带），否则星云交叠、标签压到下一排的星上。**给已有课程大批量补知识点后，跑 `bash tools/verify.sh`**，e2e 报压盖就重排 `layout.slots` 并调大 `viewBox` 高度——第二、三天区就是这么从 80px 行距重排成 200px、`viewBox` 高度从 1060 加到 1780 的。
 
 **以上只管宽屏（> 640px）。** 手机竖屏不用 `layout.slots`，由 `starmap.js` 的 `geometry()` 按天区自动排两列（宽 400，课程名超过约 11 个汉字宽就折行），加课、加知识点都不用维护手机坐标。e2e 会在手机宽度下逐对检查标签与星座有没有压盖
 
