@@ -7,6 +7,13 @@
           { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/hooks/guard-data-json.py\"" }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/hooks/check-on-stop.py\"" }
+        ]
+      }
     ]
   }
 }

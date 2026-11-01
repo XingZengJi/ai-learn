@@ -132,7 +132,7 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 
 ### 改 docs/data/ 下的 JSON 时
 
-**默认用文本编辑（Edit 工具）逐处改，不要用 `json.dump` 整体写回。** 两类文件的排版不一样，混淆会炸出巨大 diff。**这条已由 hook 强制**：`.claude/settings.json` 配的 `tools/hooks/guard-data-json.py` 会在 Claude 调用工具前拦下「用 Write 覆盖 docs/data/ 下的 JSON」和「命令或它运行的 .py 里对数据文件用 `json.dump(`」（退出码 2）。它只看文字：`f.write(json.dumps(...))` 拦不住，仍要自觉；用 Bash 写的文字里同时提到这两样也会被误拦，改用 Edit 即可：
+**默认用文本编辑（Edit 工具）逐处改，不要用 `json.dump` 整体写回。** 两类文件的排版不一样，混淆会炸出巨大 diff。**这条已由 hook 强制**：`.claude/settings.json` 配的 `tools/hooks/guard-data-json.py` 会在 Claude 调用工具前拦下「用 Write 覆盖 docs/data/ 下的 JSON」和「命令或它运行的 .py 里对数据文件用 `json.dump(`」（退出码 2）。它只看文字：`f.write(json.dumps(...))` 拦不住；用 Bash 写的文字里同时提到这两样也会被误拦，改用 Edit 即可。漏网的由 Stop hook `tools/hooks/check-on-stop.py` 兜底：每次结束回复时，若 docs/data/ 有未提交改动，就跑 `check-data.py` 并比对排版（压在一行的短数组 / 短对象比上次提交少了一半以上，就判定为整体重写），不过就不让停。被拦一次后仍修不好会放行，并把问题直接显示给用户：
 
 - `courses.json` / `knowledge.json` / `projects.json` —— **手写的紧凑单行格式**（`{ "id": "c20", ... },` 一行一条、`"3": [[200, 1030], [600, 1030], ...]`）。`json.dump` 会把每个元素拆成多行，两行的改动会变成 800+ 行 diff
 - `quiz.json` —— 2 空格缩进的常规 pretty JSON，但**短 `options` 数组是压在一行**的，整体 `json.dump` 同样会把它们全部拆开
