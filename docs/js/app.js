@@ -5,6 +5,7 @@
   /* ---------- 双版本厂商配置 ---------- */
   const PROVIDERS = {
     anthropic: {
+      name: "Anthropic",
       switchTo: "openai",
       switchLabel: "⇄ OpenAI 课程",
       title: "CC 学习成就地图",
@@ -16,6 +17,7 @@
       planLink: true
     },
     openai: {
+      name: "OpenAI",
       switchTo: "anthropic",
       switchLabel: "⇄ Anthropic 课程",
       title: "OpenAI 学习成就地图",
@@ -288,7 +290,66 @@
         clear.id = "clear-mine";
         actions.appendChild(clear);
       }
+      /* 备份文件两个版本的记录都带上，所以只要任一版有记录就能导出；导入在新设备上一条记录都没有时也要有 */
+      if (Backup.make(SUFFIXES, storeGet, today())) actions.appendChild(barButton("下载备份", "quiet", exportBackup)).id = "export-backup";
+      actions.appendChild(barButton("导入备份", "quiet", importBackup)).id = "import-backup";
     }
+  }
+
+  /* ---------- 进度备份：文件格式与合并规则见 backup.js ---------- */
+  const SUFFIXES = Object.keys(PROVIDERS).map(p => PROVIDERS[p].storageSuffix);
+  function exportBackup() {
+    const text = Backup.make(SUFFIXES, storeGet, today());
+    if (!text) { showToast("还没有可以备份的记录", null); return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    a.download = "cc-map-backup-" + today() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    showToast("备份文件已下载。换设备后在「我的星图」点「导入备份」选这个文件就能恢复", null);
+  }
+
+  function importBackup() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+    input.hidden = true;
+    document.body.appendChild(input); /* iOS Safari 上不挂进页面的文件框，选完文件可能收不到 change */
+    input.addEventListener("change", () => {
+      const f = input.files && input.files[0];
+      input.remove();
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => restoreBackup(String(reader.result));
+      reader.onerror = () => showToast("文件读不出来，请再选一次", null);
+      reader.readAsText(f);
+    });
+    input.click();
+  }
+
+  function restoreBackup(text) {
+    let file;
+    try { file = Backup.parse(text); } catch (e) { showToast(e.message, null); return; }
+    const added = Backup.merge(file, SUFFIXES, storeGet, storeSet);
+    /* 合并是直接写进存储的，这一版的内存状态要重新读一遍 */
+    state.preview = loadJSON(PREVIEW_KEY);
+    state.passed = loadJSON(PASSED_KEY);
+    state.wrong = loadJSON(WRONG_KEY);
+    state.achieved = loadJSON(ACHIEVED_KEY);
+    state.reviewed = loadJSON(REVIEWED_KEY);
+    if (state.data.quiz) pruneWrong();
+    checkAchievements(true); /* 带回来的进度不逐个弹成就 */
+    const fmt = n => [n.stars && n.stars + " 颗星", n.projects && n.projects + " 个项目",
+      n.other && n.other + " 条测验 / 错题 / 温习记录"].filter(Boolean).join("、");
+    const mine = fmt(added[P.storageSuffix]), other = fmt(added[PROVIDERS[P.switchTo].storageSuffix]);
+    state.notice = mine || other
+      ? "备份已导入：" + (mine ? "新增 " + mine : "这个版本没有新内容") +
+        (other ? "；" + PROVIDERS[P.switchTo].name + " 版新增 " + other : "")
+      : "备份里的记录你都已经有了，没有变化";
+    renderAll();
+    window.scrollTo(0, 0);
   }
 
   function plainStarmap() {
@@ -535,9 +596,9 @@
       const hint = document.createElement("div");
       hint.className = "backup-hint";
       const text = document.createElement("span");
-      text.textContent = "苹果设备上的 Safari 可能清掉 7 天没打开的网站数据，进度会跟着丢。建议存一份分享链接当备份。";
+      text.textContent = "苹果设备上的 Safari 可能清掉 7 天没打开的网站数据，进度会跟着丢。建议下载一份备份文件。";
       hint.appendChild(text);
-      hint.appendChild(barButton("存一份分享链接", "backup-btn", openShare));
+      hint.appendChild(barButton("下载备份", "backup-btn", exportBackup));
       hint.appendChild(barButton("知道了", "", () => { storeSet(BACKUP_HINT_KEY, today()); renderStudyBar(); }));
       bar.appendChild(hint);
     }

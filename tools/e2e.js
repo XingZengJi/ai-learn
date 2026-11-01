@@ -7,6 +7,13 @@
  */
 /* 固定成东八区：CI 跑在 UTC，「日期算成 UTC」这类只坑国内访客的 bug 在 UTC 下测不出来 */
 process.env.TZ = "Asia/Shanghai";
+/* 整套测试建 30 来个 jsdom 页面，每个十几 MB，而且变量一直引用着，关掉也释放不了；
+ * Node 默认的堆上限在 1G 内存的机器上只有约 560MB，已经不够。这里带上 1GB 上限重启自己一次，用法不变 */
+if (!process.env.E2E_CHILD && require("v8").getHeapStatistics().heap_size_limit < 1000 * 1048576) {
+  const r = require("child_process").spawnSync(process.execPath, ["--max-old-space-size=1024", __filename],
+    { stdio: "inherit", env: Object.assign({}, process.env, { E2E_CHILD: "1" }) });
+  process.exit(r.status === null ? 1 : r.status);
+}
 const { JSDOM, VirtualConsole } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -78,7 +85,17 @@ async function makePage(provider, hash, opts = {}) {
   if (opts.touch) {
     window.document.getElementById("starmap").getBoundingClientRect = () => ({ left: 0, top: 0, width: 1200, height: 1780 });
   }
-  for (const f of ["js/starmap.js", "js/quiz.js", "js/heatmap.js", "js/share.js", "js/app.js"]) {
+  /* 下载：jsdom 没有 createObjectURL，接住要下载的文件挂在 __downloads 上 */
+  window.__downloads = [];
+  window.URL.createObjectURL = blob => { window.__downloads.push(blob); return "blob:test"; };
+  window.URL.revokeObjectURL = () => {};
+  /* 选文件：jsdom 点文件框不会弹窗，测试先往 __pickFile 放好文件内容，点的时候直接当作选中了它 */
+  window.HTMLInputElement.prototype.click = function () {
+    if (this.type !== "file" || window.__pickFile == null) return;
+    Object.defineProperty(this, "files", { value: [new window.File([window.__pickFile], "backup.json")] });
+    this.dispatchEvent(new window.Event("change"));
+  };
+  for (const f of ["js/starmap.js", "js/quiz.js", "js/heatmap.js", "js/share.js", "js/backup.js", "js/app.js"]) {
     window.eval(fs.readFileSync(path.join(DOCS, f), "utf8"));
   }
   await new Promise(r => setTimeout(r, 300)); // 等 loadData + renderAll
@@ -354,13 +371,59 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const hintApple = () => winApple.document.querySelector("#study-bar .backup-hint");
   check("iPhone 上有点亮记录时显示备份提醒", !!hintApple() && /7 天/.test(hintApple().textContent));
   hintApple().querySelector(".backup-btn").click();
-  check("点「存一份分享链接」打开分享弹窗", !winApple.document.getElementById("share-modal").hidden);
+  check("点「下载备份」下载备份文件", winApple.__downloads.length === 1);
   [...hintApple().querySelectorAll("button")].find(b => b.textContent === "知道了").click();
   check("点「知道了」后提醒消失并记住", !hintApple() && !!winApple.localStorage.getItem("cc-map-backup-hint"));
   const winApple2 = await makePage(null, "", { ua: IPHONE });
   check("还没点亮任何星星时不提醒", !winApple2.document.querySelector("#study-bar .backup-hint"));
   const winApple3 = await makePage(null, "", { storage: { "cc-map-preview": { "knowledge:k0101": true } } });
   check("非苹果设备不提醒", !winApple3.document.querySelector("#study-bar .backup-hint"));
+
+  console.log("— 进度备份：下载与导入 —");
+  const blobText = (w, blob) => new Promise(r => { const fr = new w.FileReader(); fr.onload = () => r(fr.result); fr.readAsText(blob); });
+  const winBk = await makePage(null, "", { storage: {
+    "cc-map-preview": { "knowledge:k0101": true, "knowledge:k0102": true, "projects:p6": "2026-10-01", "坏键": true },
+    "cc-map-quiz-passed": { k0101: "2026-09-01" },
+    "cc-map-wrong": { k0103: [1] },
+    "cc-map-preview:openai": { "knowledge:k0101": true }
+  } });
+  winBk.document.getElementById("export-backup").click();
+  check("有记录时点「下载备份」下载一个文件", winBk.__downloads.length === 1);
+  const backupText = await blobText(winBk, winBk.__downloads[0]);
+  const bk = JSON.parse(backupText);
+  check("备份里两个版本的记录都有", !!bk.data["cc-map-preview"]["knowledge:k0101"] && !!bk.data["cc-map-preview:openai"]["knowledge:k0101"]);
+  check("备份带上测验通过、错题本", bk.data["cc-map-quiz-passed"].k0101 === "2026-09-01" && bk.data["cc-map-wrong"].k0103[0] === 1);
+  check("格式不对的条目不进备份", !("坏键" in bk.data["cc-map-preview"]));
+
+  const winBk2 = await makePage(null, "", { storage: {
+    "cc-map-preview": { "knowledge:k0201": true },
+    "cc-map-quiz-passed": { k0101: "2026-10-20" }
+  } });
+  const docBk2 = winBk2.document;
+  check("新设备上也有「导入备份」", !!docBk2.getElementById("import-backup"));
+  winBk2.__pickFile = backupText;
+  docBk2.getElementById("import-backup").click();
+  await wait(50);
+  const pvBk2 = JSON.parse(winBk2.localStorage.getItem("cc-map-preview"));
+  check("导入后备份里的星和项目都回来了", pvBk2["knowledge:k0101"] && pvBk2["knowledge:k0102"] && pvBk2["projects:p6"] === "2026-10-01");
+  check("只加不减：本机原有的 k0201 还在", pvBk2["knowledge:k0201"] === true);
+  check("两边都有的通过日期取较晚的", JSON.parse(winBk2.localStorage.getItem("cc-map-quiz-passed")).k0101 === "2026-10-20");
+  check("另一个版本的记录也写回去", !!JSON.parse(winBk2.localStorage.getItem("cc-map-preview:openai"))["knowledge:k0101"]);
+  check("星图立刻重画成导入后的样子", docBk2.querySelectorAll("#starmap .star.lit").length === 3);
+  const noteBk2 = docBk2.getElementById("view-bar-text").textContent;
+  check("视图条说清新增了什么（" + noteBk2 + "）", noteBk2.includes("新增 2 颗星、1 个项目") && noteBk2.includes("OpenAI 版新增 1 颗星"));
+  check("导入的进度只静默记成就，不弹提示", docBk2.getElementById("toast").hidden);
+  docBk2.getElementById("import-backup").click();
+  await wait(50);
+  check("同一份再导一次：提示没有变化", docBk2.getElementById("view-bar-text").textContent.includes("没有变化"));
+
+  const winBk3 = await makePage(null);
+  check("一条记录都没有时不出「下载备份」", !winBk3.document.getElementById("export-backup"));
+  winBk3.__pickFile = '{"hello": 1}';
+  winBk3.document.getElementById("import-backup").click();
+  await wait(50);
+  check("选错文件给出提示，不改任何记录", winBk3.document.getElementById("toast").textContent.includes("不是成就地图的备份") &&
+    !winBk3.localStorage.getItem("cc-map-preview"));
 
   console.log("— 老访客刷新页面：测验记录读得回来 —");
   /* 曾经 PASSED_KEY 定义在 state 之后，初始化时读取报错被 try/catch 吞掉，刷新后通过记录全丢 */
