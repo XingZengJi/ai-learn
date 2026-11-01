@@ -6,7 +6,7 @@
   --line: #232c45;
   --ink: #e9edf6;
   --ink-2: #9aa5bd;
-  --ink-3: #5d6880;
+  --ink-3: #7f8ba5; /* 最暗的文字色，三种底色上对比度都 ≥ 4.5:1（小字的无障碍下限） */
   /* 三个梯队的分类色（深色面板校验通过：ΔE 15.7+） */
   --t1: #199e70;
   --t2: #3987e5;
@@ -363,6 +363,7 @@ body[data-view="shared"] .view-bar { background: rgba(42, 36, 18, 0.94); border-
   font-size: 24px; line-height: 1; padding: 6px;
 }
 .k-modal-close:hover { color: var(--ink); }
+.k-modal-body:focus { outline: none; }
 
 .kd-head h2 { font-family: var(--font-display); font-size: 24px; margin: 10px 0 2px; letter-spacing: 0.04em; }
 .kd-status { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }

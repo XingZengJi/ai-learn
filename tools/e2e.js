@@ -5,6 +5,8 @@
  *      + 两种星图（我的 / 别人分享的 #s=）、旧 #author 链接回退与分享链接编码
  *      + OpenAI 实例（主题标记、星数、概要展示、完整答题、localStorage 键隔离、切换按钮）。
  */
+/* 固定成东八区：CI 跑在 UTC，「日期算成 UTC」这类只坑国内访客的 bug 在 UTC 下测不出来 */
+process.env.TZ = "Asia/Shanghai";
 const { JSDOM, VirtualConsole } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
@@ -27,6 +29,7 @@ function readJSON(rel) {
  * opts.blockStorage 模拟浏览器禁用网站数据：一碰 localStorage 就抛 SecurityError
  * opts.storage 预置 localStorage（{ 键: 对象 }），模拟老访客刷新页面
  * opts.quiz 控制题库那一个文件："hold"（一直不到，返回的 window 上挂 __releaseQuiz() 放行）或 "fail"（下载失败）
+ * opts.now 把页面里的「现在」固定在这个时间戳
  * opts.touch 模拟触屏："phone"（窄屏 + 触屏）或 "tablet"（宽屏 + 触屏）。jsdom 不做布局，
  *   星图元素统一按 1200×1780 的屏幕尺寸摆放，点击换算见 tapAt。返回的 window 上挂 __media 可改屏幕宽度并触发 change */
 async function makePage(provider, hash, opts = {}) {
@@ -53,6 +56,11 @@ async function makePage(provider, hash, opts = {}) {
     Object.defineProperty(window, "localStorage", {
       get() { throw new window.DOMException("blocked in test", "SecurityError"); }
     });
+  }
+
+  if (opts.now) {
+    window.eval("(() => { const R = Date, T = " + opts.now + "; window.Date = class extends R {" +
+      " constructor(...a) { super(...(a.length ? a : [T])); } static now() { return T; } }; })()");
   }
 
   // fetch shim：本地数据从文件系统读取；外部 API（热力图）直接失败走 fallback
@@ -391,8 +399,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     docR.getElementById("study-bar").querySelector(".wrong-btn") === null);
 
   console.log("— 到期温习：点亮满 30 天的星 —");
-  const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const localDate = ms => { const d = new Date(ms); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const daysAgo = n => localDate(Date.now() - n * 864e5);
+  const todayStr = localDate(Date.now());
   const winD = await makePage(null, "", { storage: {
     "cc-map-preview": { "knowledge:k0101": true, "knowledge:k0102": true, "knowledge:k0103": true },
     "cc-map-quiz-passed": { k0101: daysAgo(40), k0102: daysAgo(5) } /* k0103 没有通过日期（导入的），不参与 */
@@ -644,6 +653,98 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const winX = await makePage(null, "#s=garbage");
   check("退回我的星图", winX.document.body.dataset.view === "mine");
   check("并提示链接无法识别", winX.document.getElementById("view-bar-text").textContent.includes("无法识别"));
+
+  /* 在弹窗里答当前这一题并点「下一题 / 查看结果」；题目按题干从整个题库里找 */
+  const allQ = Object.values(quiz).flatMap(v => v.questions || []);
+  const answerOne = (m, right) => {
+    const q = allQ.find(x => x.q === m.querySelector(".kq-q").textContent);
+    const opts = [...m.querySelectorAll(".kq-opt")];
+    opts.find(o => o.textContent.includes(q.options[q.answer]) === right).click();
+    [...m.querySelectorAll(".kd-btn")].find(b => /下一题|查看结果/.test(b.textContent)).click();
+  };
+  const kItem = (d, kid) => [...d.querySelectorAll("#list-root .k-item")].find(b => b.textContent.includes(knowledge.find(k => k.id === kid).name));
+
+  console.log("— 日期按访客当地算，不是 UTC —");
+  /* 这一刻 UTC 还是 10-30，上海已经是 10-31 凌晨 */
+  const winTZ = await makePage(null, "", { now: Date.UTC(2026, 9, 30, 20, 0) });
+  winTZ.document.querySelector("#projects-track .project-toggle").click();
+  const tzDates = Object.values(JSON.parse(winTZ.localStorage.getItem("cc-map-preview")));
+  check("凌晨完成的项目记当地日期（" + tzDates[0] + "）", tzDates[0] === "2026-10-31");
+
+  console.log("— 错题本：只练一颗星之后不能走进死胡同 —");
+  const winWa = await makePage(null, "", { storage: { "cc-map-wrong": { k0101: [0], k0102: [0] } } });
+  const docWa = winWa.document, modalWa = docWa.getElementById("k-modal");
+  kItem(docWa, "k0101").click();
+  [...modalWa.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("只练这里的错题")).click();
+  await wait(20);
+  answerOne(modalWa, true);
+  check("这颗星练完，提示错题本里还有别的题", modalWa.textContent.includes("还有 1 题"));
+  [...modalWa.querySelectorAll(".kd-btn")].find(b => b.textContent === "继续复习").click();
+  await wait(20);
+  check("「继续复习」接着练别的星的错题，而不是说错题本是空的",
+    !modalWa.hidden && modalWa.querySelector(".kq-q").textContent === quiz.k0102.questions[0].q);
+
+  const winWb = await makePage(null, "", { storage: { "cc-map-wrong": { k0101: [999] } } });
+  check("题库改过、已不存在的错题不再显示入口", !winWb.document.querySelector("#study-bar .wrong-btn"));
+  check("并从记录里清掉", !JSON.parse(winWb.localStorage.getItem("cc-map-wrong")).k0101);
+
+  const winWc = await makePage(null, "", { storage: { "cc-map-wrong": { k0101: "坏数据", k0102: [0] }, "cc-map-reviewed": [1, 2] } });
+  await wait(20);
+  check("错题本记录被改坏时页面照常工作，坏条目清掉、好条目保留",
+    winWc.document.querySelector("#study-bar .wrong-btn").textContent.includes("1 题") &&
+    !JSON.parse(winWc.localStorage.getItem("cc-map-wrong")).k0101);
+
+  console.log("— 重绘时不丢用户的位置 —");
+  const winFo = await makePage(null);
+  const docFo = winFo.document, modalFo = docFo.getElementById("k-modal");
+  const firstDetails = docFo.querySelector("#list-root details.course-k");
+  firstDetails.open = true;
+  firstDetails.dispatchEvent(new winFo.Event("toggle"));
+  const opener = kItem(docFo, "k0101");
+  opener.focus();
+  opener.click();
+  [...modalFo.querySelectorAll(".kd-btn")].find(b => b.textContent.includes("开始测验")).click();
+  let focusInside = true;
+  quiz.k0101.questions.forEach(() => {
+    focusInside = focusInside && modalFo.contains(docFo.activeElement);
+    answerOne(modalFo, true);
+  });
+  check("换题、出结果时键盘焦点一直留在弹窗里", focusInside && modalFo.contains(docFo.activeElement));
+  check("点亮后列表重绘，刚才展开的课还开着", docFo.querySelector("#list-root details.course-k").open);
+  modalFo.querySelector(".k-modal-close").click();
+  check("关弹窗后焦点回到重绘后的同一个知识点", docFo.activeElement.tagName === "BUTTON" && docFo.activeElement.dataset.k === "k0101");
+
+  kItem(docFo, "k0102").click();
+  const focusable = [...modalFo.querySelectorAll("a[href], button")];
+  focusable[focusable.length - 1].focus();
+  modalFo.dispatchEvent(new winFo.KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+  check("Tab 走到弹窗末尾会绕回开头，不跑到背后的页面", docFo.activeElement === focusable[0]);
+  modalFo.querySelector(".k-modal-close").click();
+
+  const starF = docFo.querySelector('#starmap .star[data-k="k0103"]');
+  starF.dispatchEvent(new winFo.MouseEvent("mouseenter", { clientX: 10, clientY: 10 }));
+  starF.dispatchEvent(new winFo.MouseEvent("click", { bubbles: true }));
+  check("打开弹窗时收起星星的悬停提示", docFo.getElementById("tooltip").hidden);
+  modalFo.querySelector(".k-modal-close").click();
+
+  console.log("— 其他回归 —");
+  const winHs = await makePage(null);
+  winHs.location.hash = sharedHash;
+  await wait(20);
+  check("在已打开的页面里粘贴分享链接，会切到那张星图", winHs.document.body.dataset.view === "shared");
+  check("星图内部的星星能被读屏软件读到（不再整张当成一张图片）", winHs.document.getElementById("starmap").getAttribute("role") !== "img");
+
+  winX.document.querySelector("#projects-track .project-toggle").click();
+  check("一次性提示只显示一次，之后恢复正常文案", !winX.document.getElementById("view-bar-text").textContent.includes("无法识别"));
+
+  const winQl = await makePage(null, "", { quiz: "hold" });
+  const searchQ = winQl.document.getElementById("list-search");
+  const phrase = quiz.k0201.summary.slice(4, 14);
+  searchQ.value = phrase;
+  searchQ.dispatchEvent(new winQl.Event("input"));
+  winQl.__releaseQuiz();
+  await wait(30);
+  check("题库晚到时，搜索结果自动补上概要命中的知识点", !!kItem(winQl.document, "k0201"));
 
   /* ==================== OpenAI 实例 ==================== */
   const win2 = await makePage("openai");

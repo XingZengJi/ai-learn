@@ -21,6 +21,7 @@
   function init() {
     modal = document.getElementById("k-modal");
     panel = modal.querySelector(".k-modal-body");
+    panel.tabIndex = -1; /* 换题时把焦点放在这里，见 freshPanel */
     closeBtn = modal.querySelector(".k-modal-close");
     closeBtn.addEventListener("click", close);
     modal.querySelector(".k-modal-backdrop").addEventListener("click", close);
@@ -56,10 +57,28 @@
     document.body.style.overflow = "";
     ctx = null;
     run = null; /* 中途关闭不计成绩 */
-    if (opener && typeof opener.focus === "function") opener.focus({ preventScroll: true });
-    opener = null;
+    restoreFocus();
     /* 弹窗关掉、星星露出来之后才撒花——否则纸屑全被弹窗盖住 */
     if (pendingCelebrate) { const kid = pendingCelebrate; pendingCelebrate = null; celebrateAtStar(kid); }
+  }
+
+  /* 点亮后星图和列表都整张重画，原来那个元素已经没了，要找重画后的同一颗星 / 同一行 */
+  function restoreFocus() {
+    let target = opener;
+    opener = null;
+    if (target && !target.isConnected && target.getAttribute) {
+      const kid = target.getAttribute("data-k"), tag = target.tagName;
+      target = kid ? [...document.querySelectorAll('[data-k="' + kid + '"]')].find(n => n.tagName === tag) : null;
+    }
+    if (target && typeof target.focus === "function") target.focus({ preventScroll: true });
+  }
+
+  /* 换一屏内容：按钮随旧内容一起没了，焦点得有去处，否则键盘用户被甩到页面最前面；
+   * 滚动也归零，否则看完长解析后，下一题是从半截开始显示的 */
+  function freshPanel() {
+    panel.textContent = "";
+    panel.parentElement.scrollTop = 0;
+    panel.focus({ preventScroll: true });
   }
 
   function button(text, primary, onClick) {
@@ -92,7 +111,7 @@
     const k = ctx.k, quiz = ctx.quiz;
     const st = ctx.state.statusOf("knowledge", k.id);
     const doneDate = ctx.state.dateOf("knowledge", k.id);
-    panel.textContent = "";
+    freshPanel();
 
     const head = document.createElement("div");
     head.className = "kd-head";
@@ -172,7 +191,7 @@
     const item = run.items[run.idx];
     const q = item.q;
     const order = run.order[run.idx];
-    panel.textContent = "";
+    freshPanel();
 
     const head = document.createElement("div");
     head.className = "kq-head";
@@ -251,7 +270,7 @@
   function renderResult() {
     const total = run.items.length;
     const nWrong = run.wrong.length;
-    panel.textContent = "";
+    freshPanel();
     const box = document.createElement("div");
     box.className = "kq-result";
 
@@ -291,7 +310,7 @@
     const total = run.items.length;
     const nRight = total - run.wrong.length;
     const res = ctx.summarize({ total: total, right: nRight, items: run.items, wrong: run.wrong });
-    panel.textContent = "";
+    freshPanel();
     const box = document.createElement("div");
     box.className = "kq-result";
     box.innerHTML = '<h2 id="k-modal-title">' + ctx.review + "完成：答对 " + nRight + " / " + total + "</h2>";

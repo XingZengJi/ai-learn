@@ -11,6 +11,7 @@ REPO = Path(__file__).resolve().parent.parent
 DATA_ROOT = REPO / "docs" / "data"
 # 正确项的显示宽度超过最长干扰项的这个倍数就报错：选项会乱序，长度成了唯一残留线索，挑最长的就能蒙对
 ANSWER_LEN_RATIO = 1.3
+POSITION_REF = re.compile(r"选项\s*[一二三四ABCD1-4]|第\s*[一二三四1-4]\s*个?选项|(?<![A-Za-z])[ABCD]\s*(?:项(?!目)|选项)")
 
 
 def display_width(s):
@@ -40,6 +41,31 @@ def check_provider(data_dir, counts):
     pids = {p["id"] for p in files["projects"]["projects"]}
     tiers = files["courses"]["tiers"]
     layout = files["courses"].get("layout")
+
+    # id 不能重复，格式要符合分享链接的编码规则（见 share.js）：知识点 k<课程两位><序号两位>，
+    # 两位课程号就是所属课程的数字，序号 ≤ 52。不符合的不会报错，只会从分享链接里悄悄丢掉
+    for name, items in [("courses", files["courses"]["courses"]), ("knowledge", files["knowledge"]["knowledge"]),
+                        ("projects", files["projects"]["projects"])]:
+        seen = set()
+        for item in items:
+            if item["id"] in seen:
+                fail(f'{name} 里 id {item["id"]} 重复')
+            seen.add(item["id"])
+    for cid in course_ids:
+        if not re.fullmatch(r"c\d{2}", cid):
+            fail(f"课程 id {cid} 不符合 c<两位数字> 格式")
+    for k in files["knowledge"]["knowledge"]:
+        m = re.fullmatch(r"k(\d{2})(\d{2})", k["id"])
+        if not m:
+            fail(f'知识点 id {k["id"]} 不符合 k<课程两位><序号两位> 格式')
+        elif "c" + m.group(1) != k["course"] or int(m.group(2)) > 52:
+            fail(f'知识点 {k["id"]} 的编号与所属课程 {k["course"]} 对不上，或序号超过 52')
+
+    # 先修课必须存在：写错了星图上不画线，「下一颗星」也会当它不存在
+    for c in files["courses"]["courses"]:
+        for pid in c.get("prereq", []):
+            if pid not in course_ids:
+                fail(f'课程 {c["id"]} 的 prereq 引用了不存在的课程 {pid}')
 
     # tiers 必须有 colorHex；layout 必须齐全且槽位够用
     for t, v in tiers.items():
@@ -117,6 +143,13 @@ def check_provider(data_dir, counts):
             if not q.get("explain", "").strip():
                 fail(f"quiz {kid} 第 {i} 题缺 explain")
             opts = q.get("options", [])
+            if len(set(opts)) != len(opts):
+                fail(f"quiz {kid} 第 {i} 题有两个一模一样的选项")
+            # 选项渲染时会乱序，「选项二」「B 项」这类说法必然指错（CLAUDE.md 出题硬规矩第 2 条）
+            for text in [q.get("q", ""), q.get("explain", "")]:
+                m = POSITION_REF.search(text)
+                if m:
+                    fail(f"quiz {kid} 第 {i} 题写了位置指代「{m.group(0)}」，选项乱序后会指错，请直接说内容")
             if len(opts) == 4 and isinstance(q.get("answer"), int) and 0 <= q["answer"] < 4:
                 widths = [display_width(o) for o in opts]
                 right = widths[q["answer"]]

@@ -48,15 +48,16 @@
 
   /* 「我的星图」的点亮记录。键名沿用早期的 preview 叫法，换名会丢掉访客已有的记录 */
   const PREVIEW_KEY = "cc-map-preview" + P.storageSuffix;
-  /* 下面三份记录「清空」都不清：清空只是让星图重新变暗，答过的题、错过的题、拿到的成就仍算数 */
+  /* 下面四份记录「清空」都不清：清空只是让星图重新变暗，答过的题、错过的题、拿到的成就仍算数 */
   const PASSED_KEY = "cc-map-quiz-passed" + P.storageSuffix;   /* 测验通过 { k0101: "2026-07-11" } */
   const WRONG_KEY = "cc-map-wrong" + P.storageSuffix;          /* 错题本 { k0101: [0, 2] }，值是题号（quiz.json 里的下标） */
-  const ACHIEVED_KEY = "cc-map-achieved" + P.storageSuffix;
-  const REVIEWED_KEY = "cc-map-reviewed" + P.storageSuffix;    /* 成就 { "first-star": "2026-10-18" } */
+  const ACHIEVED_KEY = "cc-map-achieved" + P.storageSuffix;    /* 成就 { "first-star": "2026-10-18" } */
+  const REVIEWED_KEY = "cc-map-reviewed" + P.storageSuffix;    /* 温习 { k0101: "2026-10-18" } */
   /* 这些键必须定义在 state 之前：state 初始化时就要读它们。曾经 PASSED_KEY 写在 state 后面，
    * 读取时撞上「先用后定义」的报错又被 try/catch 吞掉，刷新后测验记录全读不出来 */
   function loadJSON(key) {
-    try { return JSON.parse(storeGet(key)) || {}; }
+    /* 存的不是 { } 对象（被别的脚本或手动改坏了）就当没有，免得后面 .filter / .length 报错 */
+    try { const v = JSON.parse(storeGet(key)); return v && typeof v === "object" && !Array.isArray(v) ? v : {}; }
     catch (e) { return {}; }
   }
   function saveJSON(key, value) {
@@ -65,7 +66,11 @@
   const STATUS_TEXT = { done: "已点亮", doing: "进行中", todo: "未点亮" };
   /* 「看中文笔记」「这题有问题？」链到的仓库，取自 index.html 的 <meta name="repo-url">，fork 后只改那一处 */
   const REPO = ((document.querySelector('meta[name="repo-url"]') || {}).content || "").replace(/\/$/, "");
-  const today = () => new Date().toISOString().slice(0, 10);
+  /* 访客当地的日期。不能用 toISOString：那是 UTC，东八区早上 8 点前会记成昨天 */
+  const today = () => {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  };
 
   function tierColor(t) {
     return (state.data.tiers[t] || {}).colorHex || "#3987e5";
@@ -89,6 +94,7 @@
     reviewed: loadJSON(REVIEWED_KEY), /* 已点亮的星最近一次温习全对的日期，和点亮日期分开存 */
     next: null, /* 推荐的下一颗星（知识点 id），renderAll 时算 */
     search: "", /* 列表页搜索框里的字 */
+    openCourses: new Set(), /* 列表里展开着的课程：每次点亮都整张重画，不记下来就全收起了 */
     statusOf(type, id) {
       const lit = this.view === "shared" ? this.shared.lit : this.preview;
       return lit[type + ":" + id] ? "done" : "todo";
@@ -165,7 +171,11 @@
   function loadQuiz(started) {
     if (!quizLoad) {
       quizLoad = (started || fetchJSON(P.dataDir + "quiz.json")).then(
-        q => { state.data.quiz = q; },
+        q => {
+          state.data.quiz = q;
+          pruneWrong();
+          if (state.search) renderList(); /* 搜索要查概要，题库晚到时把漏掉的结果补上 */
+        },
         err => { quizLoad = null; throw err; });
     }
     return quizLoad;
@@ -259,6 +269,7 @@
       text.textContent = state.notice ||
         (n ? "我的星图 · 已点亮 " + n + " 颗，记录保存在这个浏览器里"
            : "点任意一颗星，答对测验就能点亮它 · 记录只保存在这个浏览器里");
+      state.notice = ""; /* 只显示这一次，下次重绘恢复正常文案 */
       const any = n + s.projects > 0;
       if (any) actions.appendChild(barButton("分享我的星图", "primary", openShare));
       if (any) {
@@ -312,6 +323,7 @@
   }
 
   function openKnowledge(k, quizFailed) {
+    tooltip.hidden = true; /* 鼠标不动就等不到 mouseleave，提示会一直盖在弹窗上 */
     const course = state.data.courses.find(c => c.id === k.course);
     /* 题库还在路上：先开弹窗显示「加载中」，到了再原地刷新；没到之前不能按「无题」处理，否则能绕过测验。
      * 下载失败就停在提示上，下次打开知识点再重试 */
@@ -331,7 +343,7 @@
       notesUrl: course.notes && REPO ? REPO + "/tree/main/" + course.notes.split("/").map(encodeURIComponent).join("/") : null,
       reportUrl: reportUrl,
       onAnswer: recordAnswer,
-      wrongCount: () => (state.wrong[k.id] || []).length,
+      wrongCount: () => wrongItems(k.id).length,
       onReview: () => startReview(k.id),
       nextStar: () => state.next && state.data.kById[state.next],
       onNext: next => openKnowledge(next),
@@ -374,18 +386,33 @@
     renderStudyBar();
   }
 
-  /* 错题本里的题按知识点顺序排好；题库改过、题号已不存在的顺手清掉 */
+  /* 题库改过、题号或知识点已不存在的错题，留着只会多出一个点进去却没题的入口 */
+  function pruneWrong() {
+    let changed = false;
+    Object.keys(state.wrong).forEach(kid => {
+      const qs = (state.data.quiz[kid] || {}).questions || [];
+      const list = Array.isArray(state.wrong[kid]) ? state.wrong[kid] : [];
+      const kept = list.filter(i => qs[i]);
+      if (Array.isArray(state.wrong[kid]) && kept.length === list.length) return;
+      changed = true;
+      if (kept.length) state.wrong[kid] = kept;
+      else delete state.wrong[kid];
+    });
+    if (changed) { saveJSON(WRONG_KEY, state.wrong); renderStudyBar(); }
+  }
+
+  /* 错题本里的题按知识点顺序排好 */
   function wrongItems(onlyKid) {
     const items = [];
     state.data.knowledge.forEach(k => {
       if (onlyKid && k.id !== onlyKid) return;
       const qs = (state.data.quiz && state.data.quiz[k.id] || {}).questions || [];
-      (state.wrong[k.id] || []).forEach(i => { if (qs[i]) items.push({ k: k, q: qs[i], qIdx: i }); });
+      [].concat(state.wrong[k.id] || []).forEach(i => { if (qs[i]) items.push({ k: k, q: qs[i], qIdx: i }); });
     });
     return items;
   }
   function wrongTotal() {
-    return Object.keys(state.wrong).reduce((n, kid) => n + (state.data.kById[kid] ? state.wrong[kid].length : 0), 0);
+    return Object.keys(state.wrong).reduce((n, kid) => n + (state.data.kById[kid] && Array.isArray(state.wrong[kid]) ? state.wrong[kid].length : 0), 0);
   }
 
   const REVIEW_BATCH = 10; /* 一轮最多 10 题，错题多时不至于一口气做不完 */
@@ -405,7 +432,8 @@
             more: left > 0
           };
         },
-        onMore: () => startReview(onlyKid)
+        /* 只练一颗星时，这颗练完了就接着练别的星，否则「继续复习」点进去是空的 */
+        onMore: () => startReview(wrongItems(onlyKid).length ? onlyKid : null)
       });
     }, () => showToast("题目没有加载出来，请检查网络后再试", null));
   }
@@ -678,7 +706,7 @@
   function toggleProject(pid) {
     const key = "projects:" + pid;
     if (state.preview[key]) delete state.preview[key];
-    else state.preview[key] = new Date().toISOString().slice(0, 10);
+    else state.preview[key] = today();
     savePreview();
     renderAll();
   }
@@ -769,7 +797,13 @@
 
       const details = document.createElement("details");
       details.className = "course-k";
-      details.open = !!query;
+      details.open = !!query || state.openCourses.has(c.id);
+      /* 搜索时的自动展开不算用户展开的，清空搜索后还原 */
+      details.addEventListener("toggle", () => {
+        if (state.search.trim()) return;
+        if (details.open) state.openCourses.add(c.id);
+        else state.openCourses.delete(c.id);
+      });
       const summary = document.createElement("summary");
       summary.innerHTML =
         '<div class="list-row">' +
@@ -787,6 +821,7 @@
         const btn = document.createElement("button");
         btn.className = "k-item";
         btn.type = "button";
+        btn.dataset.k = k.id; /* 关弹窗时靠它把焦点还给重画后的这一行（quiz.js 的 restoreFocus） */
         btn.innerHTML =
           '<span class="status-dot ' + st + '" style="color:' + color + '"></span>' +
           "<span>" + k.name + "</span>" +
@@ -866,6 +901,22 @@
     });
   }
 
+  /* 两个弹窗共用：Tab 走到头绕回开头，键盘用户不会跑到被遮住的页面上 */
+  function setupModalFocus() {
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Tab") return;
+      const box = document.querySelector(".k-modal:not([hidden]) .k-modal-box");
+      if (!box) return;
+      const items = [...box.querySelectorAll("a[href], button:not([disabled]), input")];
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1], cur = document.activeElement;
+      if (!box.contains(cur) || (e.shiftKey ? cur === first : cur === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    });
+  }
+
   function renderAll() {
     if (state.view === "mine") checkAchievements(false);
     state.next = computeNext();
@@ -899,7 +950,7 @@
 
   renderChrome();
   loadData()
-    .then(() => { applyView(); checkAchievements(true); setupTabs(); setupSearch(); setupZoomBar(); watchCompact(); renderAll(); Heatmap.init(); })
+    .then(() => { applyView(); checkAchievements(true); setupTabs(); setupSearch(); setupZoomBar(); setupModalFocus(); watchCompact(); renderAll(); Heatmap.init(); })
     .catch(err => {
       document.querySelector("main").innerHTML =
         '<p style="text-align:center;color:#9aa5bd;padding:40px">数据加载失败：' + err.message +
