@@ -50,6 +50,14 @@ async function makePage(provider, hash, opts = {}) {
   if (provider) window.localStorage.setItem("cc-map-provider", provider);
   for (const [k, v] of Object.entries(opts.storage || {})) window.localStorage.setItem(k, JSON.stringify(v));
   if (opts.ua) Object.defineProperty(window.navigator, "userAgent", { get: () => opts.ua });
+  /* 从主屏幕图标打开（iOS 的 navigator.standalone） */
+  if (opts.standalone) Object.defineProperty(window.navigator, "standalone", { get: () => true });
+  /* 「别自动清数据」请求：jsdom 没有 navigator.storage，记下调了几次 persist */
+  window.__persistCalls = 0;
+  Object.defineProperty(window.navigator, "storage", { get: () => ({
+    persisted: () => Promise.resolve(false),
+    persist: () => { window.__persistCalls++; return Promise.resolve(true); }
+  }) });
   if (opts.touch) {
     const media = { narrow: opts.touch === "phone", listeners: [] };
     media.fire = () => media.listeners.forEach(f => f());
@@ -370,6 +378,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const winApple = await makePage(null, "", { ua: IPHONE, storage: { "cc-map-preview": { "knowledge:k0101": true } } });
   const hintApple = () => winApple.document.querySelector("#study-bar .backup-hint");
   check("iPhone 上有点亮记录时显示备份提醒", !!hintApple() && /7 天/.test(hintApple().textContent));
+  check("提醒里教「添加到主屏幕」并说明要导入备份", /添加到主屏幕/.test(hintApple().textContent) && /导入备份/.test(hintApple().textContent));
   hintApple().querySelector(".backup-btn").click();
   check("点「下载备份」下载备份文件", winApple.__downloads.length === 1);
   [...hintApple().querySelectorAll("button")].find(b => b.textContent === "知道了").click();
@@ -378,6 +387,20 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("还没点亮任何星星时不提醒", !winApple2.document.querySelector("#study-bar .backup-hint"));
   const winApple3 = await makePage(null, "", { storage: { "cc-map-preview": { "knowledge:k0101": true } } });
   check("非苹果设备不提醒", !winApple3.document.querySelector("#study-bar .backup-hint"));
+  const winApple4 = await makePage(null, "", { ua: IPHONE, standalone: true, storage: { "cc-map-preview": { "knowledge:k0101": true } } });
+  check("从主屏幕图标打开时不提醒（苹果不清它的数据）", !winApple4.document.querySelector("#study-bar .backup-hint"));
+
+  console.log("— 添加到主屏幕 & 请浏览器别清数据 —");
+  const headLinks = winApple3.document.querySelector('link[rel="manifest"]');
+  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, "manifest.webmanifest"), "utf8"));
+  check("页面挂了 manifest", !!headLinks && headLinks.getAttribute("href") === "manifest.webmanifest");
+  check("manifest 和苹果图标指向的文件都在", manifest.icons.concat([{ src: winApple3.document.querySelector('link[rel="apple-touch-icon"]').getAttribute("href") }])
+    .every(i => fs.existsSync(path.join(DOCS, i.src))));
+  await wait(20);
+  check("有点亮记录的老访客：请求一次「别自动清」", winApple3.__persistCalls === 1);
+  const winPs = await makePage(null);
+  await wait(20);
+  check("没有进度的新访客不请求", winPs.__persistCalls === 0);
 
   console.log("— 进度备份：下载与导入 —");
   const blobText = (w, blob) => new Promise(r => { const fr = new w.FileReader(); fr.onload = () => r(fr.result); fr.readAsText(blob); });

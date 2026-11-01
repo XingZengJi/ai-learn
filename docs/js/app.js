@@ -157,7 +157,7 @@
     window.scrollTo(0, 0);
   }
 
-  function savePreview() { saveJSON(PREVIEW_KEY, state.preview); }
+  function savePreview() { saveJSON(PREVIEW_KEY, state.preview); askPersist(); }
   function savePassed() { saveJSON(PASSED_KEY, state.passed); }
 
   function fetchJSON(u) {
@@ -349,6 +349,7 @@
         (other ? "；" + PROVIDERS[P.switchTo].name + " 版新增 " + other : "")
       : "备份里的记录你都已经有了，没有变化";
     renderAll();
+    askPersist();
     window.scrollTo(0, 0);
   }
 
@@ -575,6 +576,18 @@
     const ua = navigator.userAgent || "";
     return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua));
   }
+  /* 从主屏幕图标打开的：苹果不对它执行 7 天清理，不用再提醒 */
+  function isStandalone() {
+    return navigator.standalone === true || (!!window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  }
+  /* 请浏览器把本站数据标成「别自动清」。Chrome 按访问习惯静默决定，Firefox 会问一次；
+   * 只在访客有点亮记录后才请求，没进度的新访客不打扰。不支持的浏览器什么都不做 */
+  let persistAsked = false;
+  function askPersist() {
+    if (persistAsked || state.view !== "mine" || !countStats().stars || !navigator.storage || !navigator.storage.persist) return;
+    persistAsked = true;
+    navigator.storage.persisted().then(done => done || navigator.storage.persist()).catch(() => {});
+  }
 
   function renderStudyBar() {
     const bar = document.getElementById("study-bar");
@@ -582,7 +595,7 @@
     const k = state.next && state.data.kById[state.next];
     const nWrong = state.view === "mine" ? wrongTotal() : 0;
     const nDue = dueStars().length;
-    const backupHint = state.view === "mine" && countStats().stars > 0 && isAppleWebKit() && !storeGet(BACKUP_HINT_KEY);
+    const backupHint = state.view === "mine" && countStats().stars > 0 && isAppleWebKit() && !isStandalone() && !storeGet(BACKUP_HINT_KEY);
     bar.hidden = state.view !== "mine" || (!k && !nWrong && !nDue && !backupHint);
     if (bar.hidden) return;
     if (k) {
@@ -596,7 +609,9 @@
       const hint = document.createElement("div");
       hint.className = "backup-hint";
       const text = document.createElement("span");
-      text.textContent = "苹果设备上的 Safari 可能清掉 7 天没打开的网站数据，进度会跟着丢。建议下载一份备份文件。";
+      /* iOS 主屏幕图标和 Safari 各存各的，进度不会自动带过去，所以要先备份、再到图标里导入 */
+      text.textContent = "苹果设备上的 Safari 可能清掉 7 天没打开的网站数据，进度会跟着丢。建议下载一份备份文件；" +
+        "更稳的做法是用 Safari 的分享按钮「添加到主屏幕」，以后从图标打开（图标里的进度和 Safari 分开存，第一次打开时点「导入备份」把这份文件导进去）。";
       hint.appendChild(text);
       hint.appendChild(barButton("下载备份", "backup-btn", exportBackup));
       hint.appendChild(barButton("知道了", "", () => { storeSet(BACKUP_HINT_KEY, today()); renderStudyBar(); }));
@@ -1011,7 +1026,7 @@
 
   renderChrome();
   loadData()
-    .then(() => { applyView(); checkAchievements(true); setupTabs(); setupSearch(); setupZoomBar(); setupModalFocus(); watchCompact(); renderAll(); Heatmap.init(); })
+    .then(() => { applyView(); checkAchievements(true); setupTabs(); setupSearch(); setupZoomBar(); setupModalFocus(); watchCompact(); renderAll(); Heatmap.init(); askPersist(); })
     .catch(err => {
       document.querySelector("main").innerHTML =
         '<p style="text-align:center;color:#9aa5bd;padding:40px">数据加载失败：' + err.message +

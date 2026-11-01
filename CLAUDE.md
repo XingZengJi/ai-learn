@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Course/<厂商>/<NN课程名>/` — 课程笔记（中英对照/中文译述）。厂商层目前有 `Claude/`（Anthropic Skilljar 课程）与 `Codex/`（OpenAI Codex 课程）
 - `notes/` — 学习笔记（费曼输出法）
 - `practice/` — 实践产出（按项目分文件夹，见下）
-- `tools/` — `check-data.py`（零依赖数据校验）、`e2e.js`（jsdom 冒烟测试）
+- `tools/` — `check-data.py`（零依赖数据校验）、`e2e.js`（jsdom 冒烟测试）、`make-icons.py`（画主屏幕图标，需 Pillow）
 
 ## 常用命令
 
@@ -113,7 +113,8 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
   - **列表页搜索**：`#list-search` 写在 index.html 里（不随 renderList 重建，输入时不丢焦点），按课程名、知识点名和题库概要过滤
   - **成就**：`achievementDefs()` 定义，只增不减。页面刚打开和「存为我的星图」带进来的进度只静默记录，其余新解锁时弹提示条
   - **存为我的星图**：分享星图视图条上的按钮，点两次确认，把分享的点亮合并进自己的（只加不减），用来换设备
-  - **备份提醒**：苹果设备（iOS 全部浏览器、macOS Safari）的 WebKit 会清掉 7 天没打开的网站数据，所以在这类设备上、有点亮记录时，学习助手条会提示存一份分享链接；点「知道了」记进 `cc-map-backup-hint`（不分厂商）后不再出现
+  - **备份提醒**：苹果设备（iOS 全部浏览器、macOS Safari）的 WebKit 会清掉 7 天没打开的网站数据，所以在这类设备上、有点亮记录时，学习助手条会提示下载备份或「添加到主屏幕」；点「知道了」记进 `cc-map-backup-hint`（不分厂商）后不再出现。从主屏幕图标打开（`isStandalone()`）时不提示——苹果不清它的数据，但**它和 Safari 各存各的**，进度要靠备份文件导过去
+  - **添加到主屏幕**：`manifest.webmanifest` + `icons/`（PNG 由 `tools/make-icons.py` 画出，改配色时重跑）。另外访客有点亮记录后，`askPersist()` 会请求一次 `navigator.storage.persist()`（请浏览器别自动清本站数据），只在「我的星图」里、没进度的新访客不请求
   - **外链**：弹窗里「去学这门课」用 courses.json 的 `url`；「看中文笔记」用 `notes`（仓库内文件夹路径，只给已公开的笔记写，`check-data.py` 会核对它已提交进仓库）；「这题有问题？」按字段 id 预填 `.github/ISSUE_TEMPLATE/quiz-error.yml`。仓库地址取自 index.html 的 `<meta name="repo-url">`
 - `js/share.js` — 分享链接编解码 + 分享弹窗（复制链接 / 生成图片）。**链接按「课程号 → 知识点序号位图」编码，行星单独放 `&p=`（项目编号位图），删除或重新编号已有知识点/项目会让旧链接错位**；新增不受影响
 - `js/backup.js` — 进度备份文件的格式与合并规则（不碰页面，读写存储由 app.js 传入）。视图条上的「下载备份」「导入备份」：一个 JSON 文件带走**两个版本**的点亮、测验通过、错题本、温习、成就五类记录（分享链接只带得走点亮）；导入**只合并不覆盖**，通过 / 温习日期取较晚、成就取较早、错题取并集。苹果设备的备份提醒也指向「下载备份」。**新增一类 localStorage 记录时要把它加进 `KINDS`**，否则备份里没有它
