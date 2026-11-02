@@ -111,6 +111,14 @@ async function makePage(provider, hash, opts = {}) {
 }
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
+/* 等到条件成立（每 10ms 看一次，最多 3 秒）。读文件这类异步操作别用固定的 wait：
+ * 导入备份测试曾固定等 50ms，机器一忙文件还没读完就去检查，时过时不过 */
+async function waitFor(cond, ms = 3000) {
+  for (const end = Date.now() + ms; Date.now() < end; await wait(10)) {
+    try { if (cond()) return true; } catch (e) { /* 还没准备好 */ }
+  }
+  return false;
+}
 
 (async () => {
   /* ==================== Anthropic 实例（默认）==================== */
@@ -396,7 +404,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("页面挂了 manifest", !!headLinks && headLinks.getAttribute("href") === "manifest.webmanifest");
   check("manifest 和苹果图标指向的文件都在", manifest.icons.concat([{ src: winApple3.document.querySelector('link[rel="apple-touch-icon"]').getAttribute("href") }])
     .every(i => fs.existsSync(path.join(DOCS, i.src))));
-  await wait(20);
+  await waitFor(() => winApple3.__persistCalls > 0);
   check("有点亮记录的老访客：请求一次「别自动清」", winApple3.__persistCalls === 1);
   const winPs = await makePage(null);
   await wait(20);
@@ -426,7 +434,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("新设备上也有「导入备份」", !!docBk2.getElementById("import-backup"));
   winBk2.__pickFile = backupText;
   docBk2.getElementById("import-backup").click();
-  await wait(50);
+  await waitFor(() => JSON.parse(winBk2.localStorage.getItem("cc-map-preview"))["knowledge:k0101"]);
   const pvBk2 = JSON.parse(winBk2.localStorage.getItem("cc-map-preview"));
   check("导入后备份里的星和项目都回来了", pvBk2["knowledge:k0101"] && pvBk2["knowledge:k0102"] && pvBk2["projects:p6"] === "2026-10-01");
   check("只加不减：本机原有的 k0201 还在", pvBk2["knowledge:k0201"] === true);
@@ -437,14 +445,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   check("视图条说清新增了什么（" + noteBk2 + "）", noteBk2.includes("新增 2 颗星、1 个项目") && noteBk2.includes("OpenAI 版新增 1 颗星"));
   check("导入的进度只静默记成就，不弹提示", docBk2.getElementById("toast").hidden);
   docBk2.getElementById("import-backup").click();
-  await wait(50);
+  await waitFor(() => docBk2.getElementById("view-bar-text").textContent.includes("没有变化"));
   check("同一份再导一次：提示没有变化", docBk2.getElementById("view-bar-text").textContent.includes("没有变化"));
 
   const winBk3 = await makePage(null);
   check("一条记录都没有时不出「下载备份」", !winBk3.document.getElementById("export-backup"));
   winBk3.__pickFile = '{"hello": 1}';
   winBk3.document.getElementById("import-backup").click();
-  await wait(50);
+  await waitFor(() => winBk3.document.getElementById("toast").textContent.includes("不是成就地图的备份"));
   check("选错文件给出提示，不改任何记录", winBk3.document.getElementById("toast").textContent.includes("不是成就地图的备份") &&
     !winBk3.localStorage.getItem("cc-map-preview"));
 

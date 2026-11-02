@@ -16,14 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用命令
 
 ```bash
-# 一条命令跑完下面两项（只打印失败项，完整输出在 tools/e2e-last.log）。提交前跑这个；对应 Skill：/verify
+# 全部检查：数据校验（check-data.py）+ 网页冒烟测试（e2e.js，含星图压盖核算）。改过 docs/ 或 tools/ 后、提交前跑；对应 Skill：/verify
 bash tools/verify.sh
-
-# 数据校验：结构 + 交叉引用，两个厂商一起校验。改过 docs/data/ 下任何 JSON 都要跑
-python3 tools/check-data.py
-
-# 站点冒烟测试：jsdom 模拟，走完整答题流程 + 双厂商切换。改过 docs/ 下 JS/HTML 或数据后跑
-cd tools && npm install && node e2e.js
 
 # 本地预览：JSON 走 fetch，直接开 file:// 会失败，必须起服务器
 python3 -m http.server 8000 -d docs   # → http://localhost:8000
@@ -32,18 +26,18 @@ python3 -m http.server 8000 -d docs   # → http://localhost:8000
 grep -H "对应成就地图课程 ID" Course/*/*/README.md
 ```
 
-`e2e.js` 是单文件脚本，**没有「只跑某个用例」的入口**；它会自己带 `--max-old-space-size=1024` 重启一次（30 来个 jsdom 页面被变量引用着、释放不掉，Node 默认堆上限在 1G 内存的机器上不够），用法不变；要缩小范围就临时注释掉不关心的段落，别去搭测试框架。仓库没有 lint、没有构建步骤。推送到 main 和每个 PR 都会由 GitHub Actions（`.github/workflows/check.yml`）自动跑上面两项检查，只检查不部署；改了测试命令要同步这个文件。
+`e2e.js` 是单文件脚本，**没有「只跑某个用例」的入口**；要缩小范围就临时注释掉不关心的段落，别去搭测试框架。仓库没有 lint、没有构建步骤。GitHub Actions（`.github/workflows/check.yml`）在推送 main 和 PR 时分别跑两项检查，只检查不部署；改了测试命令要同步这个文件。
 
 ### Course/ 的约定
 
-- **第一层是厂商**：`Course/Claude/`（Anthropic Skilljar 课程，原先直接摊在 `Course/` 下的 21 个文件夹已整体挪进来）、`Course/Codex/`（OpenAI Codex 课程）。新抓的课先判断归属哪个厂商，再在其下建课程文件夹；下面所有约定都作用在**课程文件夹**这一层
+- **第一层是厂商**：`Course/Claude/`（Anthropic Skilljar 课程）、`Course/Codex/`（OpenAI Codex 课程）。新抓的课先判断归属哪个厂商，再在其下建课程文件夹；下面所有约定都作用在**课程文件夹**这一层
 - **`Course/Codex/` 的笔记挂在成就地图的 openai 厂商下**（`docs/data/openai/`），不新开第三个厂商。现有三个文件夹就是地图上已有的 `c01`–`c03`（映射见 `Course/Codex/README.md` 的课程表），以后新收的课才接着往下编号
 - **`Course/Codex/` 是自写学习笔记，不是译述**：OpenAI Academy 课次是 SCORM 互动课件、站内拿不到文字稿，且没有 CC 授权，不能把课件全文译述推进公开仓。每课照 `Course/Codex/笔记模板.md` 起头（引用块与 `Course/Claude/` 不同）；下文「收录一门新课」只适用于 `Course/Claude/`
 - **文件夹名 = 两位序号 + 简称**（如 `19AIF4SB`、`20AIforB`）。序号是学习/收录顺序，**不等于成就地图的课程 ID**（例如 `09FluforEdu` 对应 `c16`），也不保证唯一（`20AIforB` 与 `20AIforPK12` 同号）。两套编号的映射写在各文件夹 README 的「对应成就地图课程 ID」一行
 - **每个课程各自一套文件名前缀**，由该文件夹第一课确定后续沿用，不是全仓库统一格式（如 `ai-fluency-smb-NN-标题.md`、`mcp-N-标题.md`）。新建文件夹时先看有没有更贴近的现成前缀可沿用，没有再另起一个
 - **较新的文件夹都带一份 `README.md`**：课次一览表、课程结构、「几条值得单独记住的」、与同系列课程的对照、许可声明。新建课程文件夹时照此补上
 - **`Course/*/*/_source/` 已 gitignore** —— 英文原文抓取件仅本地留存供核对，不入公开仓库
-- **只有原课程开放了许可（CC BY-NC-SA 等）的笔记才能进公开仓**。2026-10 逐课核过原文：AI Fluency 系列 9 门有 CC 许可，可公开；其余 12 门（01、02、03、04、05、07、08、11、12、13、16、17）原文写着「All rights reserved」或根本没写许可，**已从公开仓和 Git 历史中移除**，文件夹仍在本地原位，靠 `.gitignore` 挡住。补题、复习照常读本地文件即可
+- **只有原课程开放了许可（CC BY-NC-SA 等）的笔记才能进公开仓**。AI Fluency 系列 9 门有 CC 许可，可公开；其余 12 门（01、02、03、04、05、07、08、11、12、13、16、17）原文写着「All rights reserved」或根本没写许可，**已从公开仓和 Git 历史中移除**，文件夹仍在本地原位，靠 `.gitignore` 挡住。补题、复习照常读本地文件即可
 - **这 12 门另有私有备份**，本地改了这些笔记后要同步过去，否则本机就是唯一一份。备份位置与同步命令见本地的 `CLAUDE.local.md`
 - 每篇笔记开头有固定的引用块：课程名/课次/来源/许可。原课程多为 CC BY-NC-SA 4.0，**中文译述属改编作品，必须署名原作者并声明以同一许可提供**（各版 AI Fluency 课还需标注具体合作方，如 Teach For America、CodePath、AFT）
 
@@ -71,7 +65,7 @@ grep -H "对应成就地图课程 ID" Course/*/*/README.md
 
 用户学完一个知识点/课程/项目后会说「点亮 XX」（OpenAI 版会说「点亮 OpenAI 的 XX」）。
 
-**作者的个人进度不在本仓**：2026-10-17 起不公开，网页也不再读取或展示（原 `docs/data/<厂商>/progress.json` 与 `学习计划.md` 第六节的进度表已移出）。进度文件位置与提交方式见本地的 `CLAUDE.local.md`。**不要在本仓重建 `progress.json`，也不要为点亮在本仓提交。**
+**作者的个人进度不在本仓**，网页也不读取或展示。进度文件位置与提交方式见本地的 `CLAUDE.local.md`。**不要在本仓重建 `progress.json`，也不要为点亮在本仓提交。**
 
 ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`（如 `k0203` = c02 的第 3 个知识点），项目 `p<编号>`（编号 ≤ 52，分享链接按编号做位图，`check-data.py` 校验）。**两个厂商各自一套同格式 ID，互不冲突**（数据目录、localStorage 键都按厂商隔离），用户没说厂商时默认 Anthropic。ID 与元数据定义在各厂商目录的 `courses.json`、`knowledge.json`、`projects.json` 中。
 
@@ -80,65 +74,54 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 ### 新增一门课到地图
 
 1. `courses.json` 的 `courses` 数组加条目；`knowledge.json` 加至少一个知识点
-2. **确认该梯队的 `layout.slots` 还有空位** —— 槽位可能刚好用满（第三天区曾是 9 门课占满 9 个槽位）。不够就补槽位坐标，必要时同步调大 `layout.viewBox` 高度。`check-data.py` 会校验「课程数 ≤ 槽位数」
-3. 同步 `学习计划.md` 的**四处**计数与清单：开头的知识点/课程总数文案、第一节的课程总数、第二节的速览表、注释里的定制版范围
+2. 该梯队的 `layout.slots` 要有空位，不够就补槽位坐标、必要时调大 `layout.viewBox` 高度（check-data 校验槽位数）
+3. 同步 `学习计划.md` 的**四处**计数与清单：开头的总数文案（check-data 会核对）、第一节的课程总数、第二节的速览表、注释里的定制版范围（后三处没有检查）
 
-### 星座大小由知识点数决定，加知识点也可能撑爆布局
+### 加知识点会撑大星座
 
-`check-data.py` 只校验「课程数 ≤ 槽位数」；**星座之间的视觉碰撞由 e2e 查**（「宽屏星图」一段，读渲染出来的坐标逐对检查课程名互压、星座交叠、课程名压到别的星、出画面）。星图的几何全部由 `starmap.js` 按该课的星星数 `n` 算出来：
-
-| 量 | 公式 |
-| --- | --- |
-| 星云半径 | `R = n === 1 ? 0 : min(30 + n * 7, 80)`，纵向再乘 `0.72` |
-| 全座点亮的光环 | `n === 1 ? 42 : R + 42` |
-| 课程标签 y | `cy + (n === 1 ? 24 : R * 0.82 + 22)`，其下 15px 还有计数行 |
-
-后果：一门课从 1 个占位知识点扩到 8 个，`R` 就从 0 跳到 80，原本挨得很近的槽位会立刻互相压盖。经验值是**同排间距 ≥ 180、上下排间距 ≥ 200**（还要留出标签带），否则星云交叠、标签压到下一排的星上。**给已有课程大批量补知识点后，跑 `bash tools/verify.sh`**，e2e 报压盖就重排 `layout.slots` 并调大 `viewBox` 高度——第二、三天区就是这么从 80px 行距重排成 200px、`viewBox` 高度从 1060 加到 1780 的。
-
-**以上只管宽屏（> 640px）。** 手机竖屏不用 `layout.slots`，由 `starmap.js` 的 `geometry()` 按天区自动排两列（宽 400，课程名超过约 11 个汉字宽就折行），加课、加知识点都不用维护手机坐标。e2e 会在手机宽度下逐对检查标签与星座有没有压盖
+星座大小由知识点数决定（公式见 `starmap.js` 的 `nebulaR`），一门课从 1 个知识点扩到 8 个，原本挨着的槽位就会互相压盖。**加课、批量补知识点后跑 `bash tools/verify.sh`**：e2e 会逐对检查宽屏和手机两套星图有没有压盖，报错就重排 `layout.slots`、调大 `viewBox` 高度（经验值：同排间距 ≥ 180、上下排 ≥ 200）。手机竖屏由 `geometry()` 自动排两列，不用维护坐标。
 
 ## 成就地图（docs/）架构
 
 纯静态站点，**无构建步骤、无依赖**，vanilla JS（IIFE 风格），GitHub Pages 直接从 main 分支的 `docs/` 目录发布——推送即上线。
 
-**双版本**：站点承载两套课程体系——Anthropic（默认）和 OpenAI Academy，右上角按钮切换。厂商解析顺序：URL `?v=openai` → localStorage `cc-map-provider` → 默认 anthropic。数据按厂商目录隔离：`data/anthropic/` 与 `data/openai/` 各有同构的 4 个 JSON（`courses` / `knowledge` / `projects` / `quiz`）。OpenAI 版的 localStorage 键带 `:openai` 后缀（`cc-map-preview:openai` 等），Anthropic 用无后缀键（兼容历史数据）。
+**双版本**：站点承载两套课程体系——Anthropic（默认）和 OpenAI Academy，右上角按钮切换。厂商解析顺序：URL `?v=openai` → localStorage `cc-map-provider` → 默认 anthropic。数据按厂商目录隔离：`data/anthropic/` 与 `data/openai/` 各有同构的 4 个 JSON（`courses` / `knowledge` / `projects` / `quiz`），localStorage 也按厂商隔离（见下文键名）。
 
 - `js/app.js` — 主逻辑：顶部 `PROVIDERS` 配置（数据目录、眉题、页脚链接、存储后缀），按厂商并行加载 4 个 JSON，渲染课程/项目列表。**两种星图互不混合**，由网址 `#` 决定：
-  - **我的星图**（默认）：访客在本浏览器点亮的记录（星星 `knowledge:k0101: true`、行星 `projects:p6: "<完成日期>"` 存在同一个对象里），localStorage key `cc-map-preview[:openai]`（键名沿用早期「预览点亮」叫法，改名会丢访客已有记录）
+  - **我的星图**（默认）：访客在本浏览器点亮的记录，星星 `knowledge:k0101: true`、行星 `projects:p6: "<完成日期>"` 存在同一个对象里
   - **别人分享的星图**（`#s=<编码>&p=<项目>&n=<昵称>`）：只读，编码规则见 `js/share.js` 的注释
   - 「作者的星图」（`#author`）已按用户要求下线：入口按钮和路由都删了，旧链接自动退回「我的星图」。不要加回来
   - 项目（行星）和星星一样归访客自己：网页没法检查项目做没做完，所以由访客在项目卡上点「我完成了」/「撤销完成」，用户明确选了这种自助方式。`projects.json` 的文案要写成给所有学习者的任务说明，不要写成作者自己的口吻或指向作者私有的路径
-- **学习辅助（都只在「我的星图」里）**：
-  - **存储**：错题本 `cc-map-wrong[:openai]`（`{ k0101: [题号] }`，题号是 quiz.json 里的下标）、成就 `cc-map-achieved[:openai]`、测验通过 `cc-map-quiz-passed[:openai]`、温习日期 `cc-map-reviewed[:openai]`，这四份「清空」都不清。这些键常量**必须定义在 `state` 之前**——`PASSED_KEY` 曾写在后面，初始化时读取报错被 try/catch 吞掉，刷新后通过记录全读不出来
-  - **下一颗星**：`computeNext()` 先挑学了一半的课，否则按课程顺序挑先修已完成的新课。结果显示在学习助手条（`#study-bar`）、星图上的转动虚线圈、测验通过页的「下一颗」按钮
-  - **错题本**：答错入、答对出，复习走 `Quiz.review()`，一轮最多 10 题，复习不点亮星星
-  - **到期温习**：点亮日期或上次温习日期（取较晚的）满 30 天的星，学习助手条提示「温习 · N 颗星到期」，每颗抽一题，同样走 `Quiz.review()`。答对记进 `cc-map-reviewed`，不改点亮日期；在详情里把已点亮的星整套测验全对也算温习。没有通过日期的星（导入的）不参与
-  - **列表页搜索**：`#list-search` 写在 index.html 里（不随 renderList 重建，输入时不丢焦点），按课程名、知识点名和题库概要过滤
-  - **成就**：`achievementDefs()` 定义，只增不减。页面刚打开和「存为我的星图」带进来的进度只静默记录，其余新解锁时弹提示条
-  - **存为我的星图**：分享星图视图条上的按钮，点两次确认，把分享的点亮合并进自己的（只加不减），用来换设备
-  - **备份提醒**：苹果设备（iOS 全部浏览器、macOS Safari）的 WebKit 会清掉 7 天没打开的网站数据，所以在这类设备上、有点亮记录时，学习助手条会提示下载备份或「添加到主屏幕」；点「知道了」记进 `cc-map-backup-hint`（不分厂商）后不再出现。从主屏幕图标打开（`isStandalone()`）时不提示——苹果不清它的数据，但**它和 Safari 各存各的**，进度要靠备份文件导过去
-  - **添加到主屏幕**：`manifest.webmanifest` + `icons/`（PNG 由 `tools/make-icons.py` 画出，改配色时重跑）。另外访客有点亮记录后，`askPersist()` 会请求一次 `navigator.storage.persist()`（请浏览器别自动清本站数据），只在「我的星图」里、没进度的新访客不请求
-  - **外链**：弹窗里「去学这门课」用 courses.json 的 `url`；「看中文笔记」用 `notes`（仓库内文件夹路径，只给已公开的笔记写，`check-data.py` 会核对它已提交进仓库）；「这题有问题？」按字段 id 预填 `.github/ISSUE_TEMPLATE/quiz-error.yml`。仓库地址取自 index.html 的 `<meta name="repo-url">`
-- `js/share.js` — 分享链接编解码 + 分享弹窗（复制链接 / 生成图片）。**链接按「课程号 → 知识点序号位图」编码，行星单独放 `&p=`（项目编号位图），删除或重新编号已有知识点/项目会让旧链接错位**；新增不受影响
-- `js/backup.js` — 进度备份文件的格式与合并规则（不碰页面，读写存储由 app.js 传入）。视图条上的「下载备份」「导入备份」：一个 JSON 文件带走**两个版本**的点亮、测验通过、错题本、温习、成就五类记录（分享链接只带得走点亮）；导入**只合并不覆盖**，通过 / 温习日期取较晚、成就取较早、错题取并集。苹果设备的备份提醒也指向「下载备份」。**新增一类 localStorage 记录时要把它加进 `KINDS`**，否则备份里没有它
-- `js/quiz.js` — 知识点详情弹窗 + 测验：点击星星/列表项打开详情（概要 + 测验按钮）。**有题必考、无题可直点**——quiz.json 里 `questions` 非空的知识点必须测验全对才能点亮（通过记录存 `cc-map-quiz-passed[:openai]`，「清空」不清它）；`questions` 为空或无条目的知识点显示概要/占位 + 「直接点亮」按钮。在别人分享的星图里弹窗只读，只给「去我的星图测验」。**现状：两个厂商的知识点已全部有题**（Anthropic 175 个、OpenAI 26 个），那条「直接点亮」分支已无真实数据覆盖——但它仍是活代码（新增知识点尚未出题时会走到），别当死代码删掉
-- 全对撒花：通过时先把知识点 id 记进 `pendingCelebrate`，**等弹窗关闭后**才在那颗星周围迸发纸屑（弹窗开着时撒等于被盖住）。定位靠 starmap 给每个星星组打的 `data-k` 属性——这是 `starmap.js` 与 `quiz.js` 之间的隐式契约，改星星渲染时别把它弄丢
-- **整张重画不能丢用户的位置**：每次点亮都会重画星图和列表，所以列表的展开状态存在 `state.openCourses`，关弹窗时 `quiz.js` 的 `restoreFocus` 靠 `data-k` 找回重画后的同一颗星 / 同一行（列表行也带 `data-k`，改列表渲染时别弄丢）
-- **日期一律用 app.js 的 `today()`（访客当地日期）**，别用 `toISOString()`：那是 UTC，东八区早上 8 点前会记成昨天。e2e 开头固定了 `TZ=Asia/Shanghai`，就是为了在 UTC 的 CI 上也能测出这类问题
-- `js/starmap.js` — SVG 星图：知识点=星星，课程=星座，用课程 ID 做种子的伪随机布局保证每次渲染一致；整座点亮加光环与 ✦ 徽记。**天区/槽位/viewBox 全部来自各厂商 courses.json 的 `layout` 字段**，星图代码不含任何厂商假设（星座大小与布局间距的换算见上文）
-- **宽窄屏两套排布**：`isCompact()`（宽度 ≤ 640px）时用自动两列布局（见「星座大小」一节末尾），否则用 `layout.slots`。手机横竖屏切换、拉窄窗口跨过 640px 时 app.js 的 `watchCompact()` 会重画。窄屏不画课程先修虚线（两列排布下会横穿别的星座）
-- **触屏两步交互**（`isTouchMode()`：`pointer: coarse` 或宽度 ≤ 640px）：即使换了两列布局，大星座里最近的两颗星仍只隔几像素，所以触屏改成「点星座 → 放大 → 点星星先选中、再点或按「打开」才进详情」，放大栏的 ‹ › 按知识点顺序逐颗选，专门兜挨得太近的星。点击统一由 `svg.onclick` 按「离手指最近」判定，不挂每颗星的 click / 悬停。状态在 app.js 的 `state.zoom` / `state.selected`，桌面端完全忽略。放大只改 `viewBox`：宽屏（平板）保持全图宽高比、带过渡动画；窄屏全图是细长一条，放大时只框住这一座、星图元素随之变矮，不做动画（逐帧变高会让整页抖），回全图时 app.js 把视野滚回刚才那一座
-- **分享图片不用屏幕上那张星图**：app.js 的 `plainStarmap()` 用 `{ plain: true }` 另画一张宽屏样式的全图交给 share.js——屏幕上那张在手机上是两列长图，或者正放大在某个星座
-- `js/heatmap.js` — GitHub 贡献热力图：客户端直接请求 `github-contributions-api.jogruber.de` 公开 API，SVG 自绘；两个版本共享
-- `data/<厂商>/quiz.json` — 知识点概要与题库；`answer` 是 `options` 的 0 起下标，渲染时选项乱序；`questions: []` 表示题库待补充
-- **配色的唯一数据源是各厂商 courses.json 的 `tiers[*].colorHex`**，加载后由 app.js 注入 CSS 变量 `--t1/--t2/--t3`；style.css 里 `body[data-provider="openai"]` 的同值覆盖只为防首屏闪色，改配色时两处同步
+- **学习辅助**（都只在「我的星图」里，细节看对应函数的注释）：
+
+  | 功能 | 在哪 |
+  |---|---|
+  | 下一颗星 | `computeNext()`，显示在学习助手条 `renderStudyBar()` |
+  | 错题本 / 到期温习（满 30 天） | `startReview()` / `startDueReview()`，都走 `Quiz.review()`，复习不点亮星星 |
+  | 成就（只增不减） | `achievementDefs()` / `checkAchievements()` |
+  | 列表页搜索 | `setupSearch()`；`#list-search` 写在 index.html 里，不随列表重建，输入时不丢焦点 |
+  | 存为我的星图（换设备） | `importShared()` |
+  | 备份文件 | `js/backup.js` 管格式与合并规则（只合并不覆盖），`exportBackup()` / `importBackup()` 管页面 |
+  | 苹果设备备份提醒、添加到主屏幕、请浏览器别清数据 | `isAppleWebKit()` / `isStandalone()` / `askPersist()`；iOS 主屏幕图标和 Safari **各存各的**，进度要靠备份文件导过去；图标由 `tools/make-icons.py` 画，改配色时重跑 |
+  | 外链（去学这门课 / 看中文笔记 / 这题有问题？） | courses.json 的 `url` / `notes`（只给已公开的笔记写，check-data 核对）/ `.github/ISSUE_TEMPLATE/quiz-error.yml` |
+
+- **localStorage 键名是和访客数据的约定，不要改名**（改了就丢访客已有记录）：点亮 `cc-map-preview`、测验通过 `cc-map-quiz-passed`、错题本 `cc-map-wrong`、成就 `cc-map-achieved`、温习 `cc-map-reviewed`，OpenAI 版都带 `:openai` 后缀；另有不分厂商的 `cc-map-provider`、`cc-map-backup-hint`。除点亮外「清空」都不清。键常量必须定义在 `state` 之前（e2e「老访客刷新」段会测）。**新增一类记录时要加进 `backup.js` 的 `KINDS`**，否则备份里没有它
+- `js/share.js` — 分享链接编解码 + 分享弹窗。**链接按「课程号 → 知识点序号位图」编码，行星单独放 `&p=`，删除或重新编号已有知识点/项目会让旧链接错位**；新增不受影响。分享图片用 app.js 的 `plainStarmap()` 另画一张宽屏全图，不用屏幕上那张（手机上是两列长图或正放大）
+- `js/quiz.js` — 知识点详情弹窗 + 测验。**有题必考**：`questions` 非空的知识点必须全对才能点亮。`questions` 为空时显示「直接点亮」——现在两个厂商已全部有题，这条分支没有真实数据覆盖，**但它是活代码**（新增知识点尚未出题时会走到），别当死代码删掉
+- **`data-k` 是隐式契约**：starmap 给每个星星组、列表给每一行打 `data-k`。全对撒花（`pendingCelebrate`，等弹窗关了才撒）和关弹窗后找回原位（`restoreFocus`）都靠它，改星星或列表渲染时别弄丢
+- **日期一律用 app.js 的 `today()`（访客当地日期）**，别用 `toISOString()`（UTC，东八区早上 8 点前会记成昨天；e2e 固定东八区会测出来）
+- `js/starmap.js` — SVG 星图，**天区 / 槽位 / viewBox 全部来自 courses.json 的 `layout`**，代码不含厂商假设。宽度 ≤ 640px 用自动两列布局（`isCompact()`），跨过 640px 时 `watchCompact()` 重画；触屏（`isTouchMode()`）改成「点星座放大 → 选中星星 → 再点打开」两步，因为大星座里最近的两颗星只隔几像素
+- `js/heatmap.js` — GitHub 贡献热力图，直接请求第三方公开 API `github-contributions-api.jogruber.de`
+- **配色的唯一数据源是 courses.json 的 `tiers[*].colorHex`**，由 app.js 注入 CSS 变量 `--t1/--t2/--t3`；style.css 里 `body[data-provider="openai"]` 的同值覆盖只为防首屏闪色，改配色时两处同步
 
 ### 改 docs/data/ 下的 JSON 时
 
-**默认用文本编辑（Edit 工具）逐处改，不要用 `json.dump` 整体写回。** 两类文件的排版不一样，混淆会炸出巨大 diff。**这条已由 hook 强制**：`.claude/settings.json` 配的 `tools/hooks/guard-data-json.py` 会在 Claude 调用工具前拦下「用 Write 覆盖 docs/data/ 下的 JSON」和「命令或它运行的 .py 里对数据文件用 `json.dump(`」（退出码 2）。它只看文字：`f.write(json.dumps(...))` 拦不住；用 Bash 写的文字里同时提到这两样也会被误拦，改用 Edit 即可。漏网的由 Stop hook `tools/hooks/check-on-stop.py` 兜底：每次结束回复时，若 docs/data/ 有未提交改动，就跑 `check-data.py` 并比对排版（压在一行的短数组 / 短对象比上次提交少了一半以上，就判定为整体重写），不过就不让停。被拦一次后仍修不好会放行，并把问题直接显示给用户：
+**默认用 Edit 工具逐处改，不要用 `json.dump` 整体写回**，否则两行的改动会变成几百行 diff：
 
-- `courses.json` / `knowledge.json` / `projects.json` —— **手写的紧凑单行格式**（`{ "id": "c20", ... },` 一行一条、`"3": [[200, 1030], [600, 1030], ...]`）。`json.dump` 会把每个元素拆成多行，两行的改动会变成 800+ 行 diff
-- `quiz.json` —— 2 空格缩进的常规 pretty JSON，但**短 `options` 数组是压在一行**的，整体 `json.dump` 同样会把它们全部拆开
+- `courses.json` / `knowledge.json` / `projects.json` —— **手写的紧凑格式**（一行一条、短数组压在一行）
+- `quiz.json` —— 2 空格缩进，但**短 `options` 数组压在一行**
+
+**这条由两个 hook 强制**（登记在 `.claude/settings.json`，原理见脚本开头注释）：`tools/hooks/guard-data-json.py` 在动手前拦明显的整体写回；`tools/hooks/check-on-stop.py` 在结束回复时跑 check-data 并比对排版，不过不让停。前者只看文字，用 Bash 写的文档里同时提到 `json.dump(` 和 `docs/data/` 也会被误拦，改用 Edit 即可。
 
 批量补题（一次改几十个知识点）时逐处 Edit 不现实，可以写脚本，但必须**按顶层 key 把 quiz.json 切成文本块、只替换/插入本次改动的块，已有块原样保留**；脚本先做一次「读进来再原样吐出，与磁盘逐字节比对」的保真自检，通过了才允许写入。这样几百条新增也只产生真正改动的 diff。
 
@@ -147,19 +130,17 @@ ID 约定：课程 `c01` 起，知识点 `k<课程两位数><序号两位数>`�
 用户说「给 cXX 出题」「补 cXX 的题库/知识点详情」时执行（默认 Anthropic，说明是 OpenAI 时改 `data/openai/` 下的对应文件）。**无需改任何 JS/HTML**——弹窗按 `docs/data/<厂商>/quiz.json` 数据自动填充：
 
 1. 通读 `Course/<厂商>/<课程名>/` 全部笔记；若有结业测验笔记，出题风格与考点向它对齐
-2. 核对该厂商 `knowledge.json` 里该课的知识点划分是否覆盖全部课次，缺了先补（c01 曾漏掉 Skills 课）；增删 Anthropic 知识点要同步 `学习计划.md` 开头那句「N 个知识点是星星，M 门课是星座」的计数文案
+2. 核对该厂商 `knowledge.json` 里该课的知识点划分是否覆盖全部课次，缺了先补（c01 曾漏掉 Skills 课）；增删知识点后各处计数文案要同步（check-data 会核对）
 3. 每个知识点写入 quiz.json：`summary`（2–4 句概要，PM 友好语言）+ 3–4 道单选题。每题 4 个选项，`answer` 是 0 起下标，`explain` 必填并写清依据。题目组成：记忆型考点为主，**每个知识点至少 1 道场景判断题**（给出具体工作场景，选做法或选工具）
-4. 可选的收官星：**结业综合测验做成该课的最后一个知识点**（如 OpenAI 的 `k0108`/`k0210`/`k0308`，名字写「结业综合测验：<课程名>」），6 道全场景判断题、每题跨两个以上课时。数据模型只认「知识点 → 题目」，所以课级测验只能这么挂，零 JS 改动；加星前按「星座大小」那节的公式核一遍相邻槽位间距
-5. 校验：`python3 tools/check-data.py`；**批量补题后 `node e2e.js` 也要跑**——它的断言会被数据变化打破（曾把某个知识点写死当「无题库」样本、把课程数写死成 20）
+4. 可选的收官星：**结业综合测验做成该课的最后一个知识点**（如 OpenAI 的 `k0108`/`k0210`/`k0308`，名字写「结业综合测验：<课程名>」），6 道全场景判断题、每题跨两个以上课时。数据模型只认「知识点 → 题目」，所以课级测验只能这么挂，零 JS 改动
+5. 校验：`bash tools/verify.sh`（e2e 的断言可能被数据变化打破，改断言让它跟着数据走，别删）
 6. 提交推送（中文提交信息）——推送即上线
 
 ### 出题的三条硬规矩（都源于「渲染时选项会乱序」）
 
-一次给 18 门课补题时，12 个并行 agent 几乎全都犯了前两条，事后才发现，所以单列出来：
-
-1. **正确项不能明显比干扰项长。** 选项乱序后，长度就成了唯一残留线索——把理由塞进正确项，等于不读题也能选中。理由一律写进 `explain`，必要时给过短的干扰项补齐信息量，让四项长度相当。`check-data.py` 会拦下正确项显示宽度超过最长干扰项 1.3 倍的题（汉字算 2 格），并打印「正确项是最长选项」的占比——2026-10 全库清理前这个比例是 80%，清理后约 47%，随机水平是 25%，新题别把它推高。缩短正确项是最稳的改法：干扰项补长时要防止补成第二个正确答案
-2. **题干和 `explain` 里绝不能出现「选项二是…」这类位置指代**，乱序后必然指错。要指就直接说内容（「把 Product 和 Process 说反的那一项」）
-3. **干扰项必须是「笔记里没这么说」，而不是「笔记里其实也这么说」**——后者会变成第二个正确答案。写完回笔记逐条核干扰项，比核正确项更容易发现问题
+1. **正确项不能明显比干扰项长**，否则挑最长的就能蒙对。理由写进 `explain`；缩短正确项最稳，补长干扰项时别补成第二个正确答案。check-data 拦超过 1.3 倍的题，并打印「正确项是最长选项」的占比（现约 47%，随机水平 25%，新题别推高）
+2. **题干和 `explain` 里不能写「选项二是…」这类位置指代**，要指就直接说内容。check-data 会拦
+3. **干扰项必须是「笔记里没这么说」，而不是「笔记里其实也这么说」**——后者会变成第二个正确答案。没有检查能查这条：写完回笔记逐条核干扰项，比核正确项更容易发现问题
 
 另外：**整题重写时必须重新确定 `answer`**，沿用旧下标会把正确答案指到别的选项上（这个坑真踩过）。跨课程也要查重——`c11`/`c14`/`c15` 是同一套课程内容的三个平台版本，`c06` 与各行业定制版 AI 素养课同源，最容易出现几乎逐字相同的题。
 
